@@ -20,7 +20,7 @@ class ProgramError(Exception):
 
 
 def get_info(ip_address, timeout, info, username, password):
-    # call -> CallInfo, line -> LineInfo, settings -> SettingsInfo
+    # call -> CallInfo, line -> LineInfo, settings -> SettingsInfo, mode -> ModeInfo
     path = info[0].upper() + info[1:] + 'Info'
 
     if username != '':
@@ -94,17 +94,17 @@ def main():
               '  -u, --username USERNAME    authentication username\n'
               '  -p, --password PASSWORD    authentication password\n'
               '\n'
-              'INFO is one of either line, call or settings\n')
+              'INFO is one of either line, call, settings or mode\n')
 
         return
 
     if not len(arguments):
-        raise ProgramError(f'No ring-tone specified')
+        raise ProgramError(f'No mode specified')
 
     info = arguments[0]
 
-    if info not in ('line', 'call', 'settings'):
-        raise ProgramError(f'Invalid info: info')
+    if info not in ('line', 'call', 'settings', 'mode'):
+        raise ProgramError(f'Invalid info: {info}')
 
     if ip_address is None:
         raise ProgramError('No -i/--ip option specified')
