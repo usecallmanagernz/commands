@@ -1,0 +1,127 @@
+#!/usr/bin/python3
+#
+# Copyright (c) 2020 Gareth Palmer <gareth.palmer3@gmail.com>
+# This program is free software, distributed under the terms of
+# the GNU General Public License Version 2.
+
+import sys
+import os.path
+import re
+import getopt
+import traceback
+import ipaddress
+from lxml import etree
+import requests
+import requests.auth
+
+
+class ProgramError(Exception):
+    pass
+
+
+def get_info(ip_address, timeout, info, username, password):
+    # call -> CallInfo, line -> LineInfo, settings -> SettingsInfo
+    path = info[0].upper() + info[1:] + 'Info'
+
+    if username != '':
+        auth = requests.auth.HTTPBasicAuth(username, password)
+    else:
+        auth = None
+
+    try:
+        response = requests.get(f'http://{ip_address}/CGI/{path}',
+                                timeout = timeout, auth = auth)
+        response.raise_for_status()
+
+    except requests.exceptions.RequestException as error:
+        raise ProgramError(error)
+
+    if response.headers['Content-Type'][0:8] != 'text/xml':
+        raise ProgramError('Unexpected Content-Type ' + response.headers['Content-Type'])
+
+    try:
+        document = etree.fromstring(response.content, etree.XMLParser(remove_blank_text = True))
+    except etree.XMLSyntaxError as error:
+        raise ProgramError(error)
+
+    print(etree.tostring(document, pretty_print = True).decode('utf-8'), end = '')
+
+def main():
+    short_options = 'i:t:u:p:h'
+    long_options = ['ip=', 'timeout=', 'username=', 'password=', 'help']
+
+    try:
+        options, arguments = getopt.gnu_getopt(sys.argv[1:], short_options, long_options)
+    except getopt.GetoptError as error:
+        raise ProgramError(error.msg[0].upper() + error.msg[1:])
+
+    ip_address = None
+    timeout = 10
+    username = ''
+    password = ''
+    help = False
+
+    for option, argument in options:
+        if option in ('-i', '--ip'):
+            try:
+                ip_address = ipaddress.IPv4Address(argument)
+            except ipaddress.AddressValueError:
+                raise ProgramError(f'Invalid IP-address: {argument}')
+
+            ip_address = ip_address.compressed
+
+        if option in ('-t', '--timeout'):
+            try:
+                timeout = int(argument)
+            except ValueError:
+                raise ProgramError(f'Invalid timeout: {argument}')
+
+        elif option in ('-u', '--username'):
+            username = argument
+
+        elif option in ('-p', '--password'):
+            password = argument
+
+        elif option in ('-h', '--help'):
+            help = True
+
+    if help:
+        print('Usage: ' + os.path.basename(sys.argv[0]) + ' [OPTIONS] INFO\n'
+              'Get status information as XML from a Cisco IP Phone\n'
+              '\n'
+              '  -i, --ip IP-ADDRESS        IP-address of the phone\n'
+              '  -t, --timeout TIMEOUT      request timeout in seconds (default 10)\n'
+              '  -u, --username USERNAME    authentication username\n'
+              '  -p, --password PASSWORD    authentication password\n'
+              '\n'
+              'INFO is one of either line, call or settings\n')
+
+        return
+
+    if not len(arguments):
+        raise ProgramError(f'No ring-tone specified')
+
+    info = arguments[0]
+
+    if info not in ('line', 'call', 'settings'):
+        raise ProgramError(f'Invalid info: info')
+
+    if ip_address is None:
+        raise ProgramError('No -i/--ip option specified')
+
+    get_info(ip_address, timeout, info, username, password)
+
+
+if __name__ == '__main__':
+    try:
+        main()
+
+    except ProgramError as error:
+        print(str(error), file = sys.stderr)
+        exit(1)
+
+    except Exception:
+        traceback.print_exc(file = sys.stderr)
+        exit(1)
+
+    exit(0)

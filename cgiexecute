@@ -1,0 +1,174 @@
+#!/usr/bin/python3
+#
+# Copyright (c) 2020 Gareth Palmer <gareth.palmer3@gmail.com>
+# This program is free software, distributed under the terms of
+# the GNU General Public License Version 2.
+
+import sys
+import os.path
+import re
+import getopt
+import traceback
+import ipaddress
+from html import escape
+from lxml import etree
+import requests
+import requests.auth
+
+
+class ProgramError(Exception):
+    pass
+
+
+cgi_errors = {
+    1: 'Error parsing CiscoIPPhone object',
+    2: 'Error framing CiscoIPPhone object',
+    3: 'Internal file error',
+    4: 'Authentication error'
+}
+
+
+def cgi_execute(ip_address, timeout, urls, username, password):
+    content = '<?xml version="1.0" encoding="UTF-8"?>' \
+	'<CiscoIPPhoneExecute>'
+
+    for url, priority in urls:
+        content += '<ExecuteItem URL="' + escape(url) + '" Priority="' + str(priority) + '" />'
+
+    content += '</CiscoIPPhoneExecute>'
+
+    if username != '':
+        auth = requests.auth.HTTPBasicAuth(username, password)
+    else:
+        auth = None
+
+    try:
+        response = requests.post(f'http://{ip_address}/CGI/Execute',
+                                 timeout = timeout, auth = auth, data = {'XML': content})
+        response.raise_for_status()
+
+    except requests.exceptions.RequestException as error:
+        raise ProgramError(error)
+
+    if response.headers['Content-Type'][0:8] != 'text/xml':
+        raise ProgramError('Unexpected Content-Type ' + response.headers['Content-Type'])
+
+    try:
+        document = etree.fromstring(response.content)
+    except etree.XMLSyntaxError as error:
+        raise ProgramError(error)
+
+    if document.tag == 'CiscoIPPhoneError':
+        number = int(document.get('Number', 0))
+
+        raise ProgramError('Error: ' + cgi_errors.get(number, f'{number}'))
+
+    for element in document.findall('ResponseItem'):
+        url = element.get('URL')
+        data = element.get('Data', '')
+
+        print(f'{url}: {data}')
+
+
+def main():
+    short_options = 'i:t:u:p:h'
+    long_options = ['ip=', 'timeout=', 'username=', 'password=', 'help']
+
+    try:
+        options, arguments = getopt.gnu_getopt(sys.argv[1:], short_options, long_options)
+    except getopt.GetoptError as error:
+        raise ProgramError(error.msg[0].upper() + error.msg[1:])
+
+    ip_address = None
+    timeout = 10
+    username = ''
+    password = ''
+    help = False
+
+    for option, argument in options:
+        if option in ('-i', '--ip'):
+            try:
+                ip_address = ipaddress.IPv4Address(argument)
+            except ipaddress.AddressValueError:
+                raise ProgramError(f'Invalid IP-address: {argument}')
+
+            ip_address = ip_address.compressed
+
+        if option in ('-t', '--timeout'):
+            try:
+                timeout = int(argument)
+            except ValueError:
+                raise ProgramError(f'Invalid timeout: {argument}')
+
+        elif option in ('-u', '--username'):
+            username = argument
+
+        elif option in ('-p', '--password'):
+            password = argument
+
+        elif option in ('-h', '--help'):
+            help = True
+
+    if help:
+        print('Usage: ' + os.path.basename(sys.argv[0]) + ' [OPTIONS] URL[@PRIORITY]...\n'
+              'Send CGI Execute URLs to a Cisco IP Phone\n'
+              '\n'
+              '  -i, --ip IP-ADDRESS        IP-address of the phone\n'
+              '  -t, --timeout TIMEOUT      request timeout in seconds (default 10)\n'
+              '  -u, --username USERNAME    authentication username\n'
+              '  -p, --password PASSWORD    authentication password\n'
+              '\n'
+              'Up to 3 URLs may be specified\n'
+              'URL is one of Dial:, EditDial:, Key:, SoftKey:, Init:, Play:, http: or https:\n'
+              'Optional PRIORITY is either 0 (immediately), 1 (when idle) or 2 (only if idle)\n')
+
+        return
+
+    if not len(arguments):
+        raise ProgramError('No URLs specified')
+
+    urls = []
+
+    for argument in arguments:
+        if '@' in argument:
+            url, priority = argument.rsplit('@', maxsplit = 1)
+
+            try:
+                priority = int(priority)
+
+                if priority < 0 or priority > 2:
+                    raise ValueError
+
+            except ValueError:
+                raise ProgramError(f'Invalid priority: {priority}')
+        else:
+            url, priority = argument, 0
+
+        if not re.search('(?x) ^ (?: (?: Dial | EditDial ) : [0-9#*]+ | (?: Key | SoftKey | Init ) : [a-zA-Z0-9]+'
+                         ' | Play: [a-zA-Z0-9._\-]+ | https? :// [^ ]+ ) $', url):
+            raise ProgramError(f'Invalid URL: {url}')
+
+        if len(urls) == 3:
+            raise ProgramError('A maximum of 3 URLs can be specified')
+
+        urls.append((url, priority))
+
+    if ip_address is None:
+        raise ProgramError('No -i/--ip option specified')
+
+    cgi_execute(ip_address, timeout, urls, username, password)
+
+
+if __name__ == '__main__':
+    try:
+        main()
+
+    except ProgramError as error:
+        print(str(error), file = sys.stderr)
+        exit(1)
+
+    except Exception:
+        traceback.print_exc(file = sys.stderr)
+        exit(1)
+
+    exit(0)
