@@ -36,7 +36,7 @@ def get_screenshot(ip_address, timeout, screenshot_file, username, password):
         with open(screenshot_file, 'wb') as file:
             file.write(response.content)
 
-    except PermissionError as error:
+    except (PermissionError, IsADirectoryError) as error:
         raise ProgramError(f'{error.filename}: {error.strerror}')
 
     print(f'Saved {screenshot_file}')

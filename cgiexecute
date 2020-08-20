@@ -119,7 +119,7 @@ def main():
               '  -p, --password PASSWORD    authentication password\n'
               '\n'
               'Up to 3 URLs may be specified\n'
-              'URL is one of Dial:, EditDial:, Key:, SoftKey:, Init:, Play:, http: or https:\n'
+              'URL is one of Dial:, EditDial:, Key:, SoftKey:, Init:, Play:, Display:, http: or https:\n'
               'Optional PRIORITY is either 0 (immediately), 1 (when idle) or 2 (only if idle)\n')
 
         return
@@ -144,8 +144,11 @@ def main():
         else:
             url, priority = argument, 0
 
-        if not re.search('(?x) ^ (?: (?: Dial | EditDial ) : [0-9#*]+ | (?: Key | SoftKey | Init ) : [a-zA-Z0-9]+'
-                         ' | Play: [a-zA-Z0-9._\-]+ | https? :// [^ ]+ ) $', url):
+        if not re.search('(?x) ^ (?: (?: Dial | EditDial ) : [0-9#*]+'
+                         ' | (?: Key | SoftKey | Init ) : [a-zA-Z]+'
+                         ' | Play: [a-zA-Z0-9._\-]+'
+                         ' | Display : ( Off | On | Default ) (:? : [0-9]+ )?'
+                         ' | https? :// [^ ]+ ) $', url):
             raise ProgramError(f'Invalid URL: {url}')
 
         if len(urls) == 3:
