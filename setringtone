@@ -35,7 +35,7 @@ def set_ringtone(ip_address, timeout, ringtone, username, password):
                                  timeout = timeout, auth = auth, data = {'XML': content})
         response.raise_for_status()
 
-    except requests.exceptions.RequestException as error:
+    except requests.RequestException as error:
         raise ProgramError(error)
 
     print(f'Set ring-tone to {ringtone}')

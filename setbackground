@@ -38,7 +38,7 @@ def set_background(ip_address, timeout, image, icon, username, password):
                                  timeout = timeout, auth = auth, data = {'XML': content})
         response.raise_for_status()
 
-    except requests.exceptions.RequestException as error:
+    except requests.RequestException as error:
         raise ProgramError(error)
 
     print(f'Set background to {image}')
