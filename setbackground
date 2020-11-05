@@ -102,7 +102,7 @@ def main():
 
     image = arguments[0]
 
-    if not re.search('(?x) ^ https?:// ', image):
+    if not re.search(r'(?x) ^ https?:// ', image):
         raise ProgramError(f'Invalid image: {image}')
 
     if len(arguments) < 2:
@@ -110,7 +110,7 @@ def main():
 
     icon = arguments[1]
 
-    if not re.search('(?x) ^ https?:// ', icon):
+    if not re.search(r'(?x) ^ https?:// ', icon):
         raise ProgramError(f'Invalid icon: {icon}')
 
     if ip_address is None:

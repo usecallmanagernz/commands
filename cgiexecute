@@ -144,11 +144,11 @@ def main():
         else:
             url, priority = argument, 0
 
-        if not re.search('(?x) ^ (?: (?: Dial | EditDial ) : [0-9#*]+'
-                         ' | (?: Key | SoftKey | Init ) : [a-zA-Z]+'
-                         ' | Play: [a-zA-Z0-9._\-]+'
-                         ' | Display : ( Off | On | Default ) (:? : [0-9]+ )?'
-                         ' | https? :// [^ ]+ ) $', url):
+        if not re.search(r'(?x) ^ (?: (?: Dial | EditDial ) : [0-9#*]+'
+                          ' | (?: Key | SoftKey | Init ) : [a-zA-Z]+'
+                          ' | Play: [a-zA-Z0-9._\-]+'
+                          ' | Display : ( Off | On | Default ) (:? : [0-9]+ )?'
+                          ' | https? :// [^ ]+ ) $', url):
             raise ProgramError(f'Invalid URL: {url}')
 
         if len(urls) == 3:

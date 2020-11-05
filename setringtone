@@ -98,7 +98,7 @@ def main():
 
     ringtone = arguments[0]
 
-    if not re.search('(?x) ^ https?:// ', ringtone):
+    if not re.search(r'(?x) ^ https?:// ', ringtone):
         raise ProgramError(f'Invalid ring-tone: {ringtone}')
 
     if ip_address is None:
