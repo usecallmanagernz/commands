@@ -301,7 +301,7 @@ def main():
             except ValueError:
                 raise ProgramError(f'Invalid volume: {argument}')
 
-        elif option in ('-c' '--codec'):
+        elif option in ('-c', '--codec'):
             if argument not in ('g711', 'g722'):
                 raise ProgramError(f'Invalid codec: {argument}')
 
