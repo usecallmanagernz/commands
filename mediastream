@@ -25,13 +25,13 @@ class ProgramError(Exception):
     pass
 
 
-def cgi_execute(target_address, timeout, username, password, content):
+def cgi_execute(target_hostname, timeout, username, password, content):
     if username != '':
         auth = requests.auth.HTTPBasicAuth(username, password)
     else:
         auth = None
 
-    response = requests.post(f'http://{target_address}/CGI/Execute',
+    response = requests.post(f'http://{target_hostname}:80/CGI/Execute',
                              timeout = timeout, auth = auth, data = {'XML': content})
     response.raise_for_status()
 
@@ -41,13 +41,13 @@ def cgi_execute(target_address, timeout, username, password, content):
     return response.content
 
 
-def start_media(target_addresses, multicast_address, port, timeout, volume, codec, username, password):
+def start_media(target_hostnames, multicast_address, port, timeout, volume, codec, username, password):
     if multicast_address is not None:
         source_address = multicast_address
     else:
-        # find our source address using the first target IP-address
+        # find our source address using the first target host
         udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        udp_socket.connect((target_addresses[0], 0))
+        udp_socket.connect((target_hostnames[0], 0))
 
         source_address = udp_socket.getsockname()[0]
         udp_socket.close()
@@ -66,12 +66,12 @@ def start_media(target_addresses, multicast_address, port, timeout, volume, code
     with concurrent.futures.ThreadPoolExecutor(max_workers = 32) as executor:
         futures = {}
 
-        for target_address in target_addresses:
-            future = executor.submit(cgi_execute, target_address, timeout, username, password, content)
-            futures[future] = target_address
+        for target_hostname in target_hostnames:
+            future = executor.submit(cgi_execute, target_hostname, timeout, username, password, content)
+            futures[future] = target_hostname
 
         for future in concurrent.futures.as_completed(futures):
-            target_address = futures[future]
+            target_hostname = futures[future]
 
             try:
                 document = etree.fromstring(future.result())
@@ -84,12 +84,12 @@ def start_media(target_addresses, multicast_address, port, timeout, volume, code
 
             except Exception as error:
                 # remove address so we don't try and send it audio
-                target_addresses.remove(target_address)
+                target_hostnames.remove(target_hostname)
 
-                print(f'Error {target_address}: {error}')
+                print(f'Error {target_hostname}: {error}')
 
 
-def stream_media(target_addresses, multicast_address, port, codec, wav_file):
+def stream_media(target_hostnames, multicast_address, port, codec, wav_file):
     Gst.init(None)
 
     file_src = Gst.ElementFactory.make('filesrc', None)
@@ -162,7 +162,7 @@ def stream_media(target_addresses, multicast_address, port, codec, wav_file):
     if multicast_address is not None:
         udp_sink.set_property('clients', f'{multicast_address}:{port}')
     else:
-        udp_sink.set_property('clients', ''.join([f'{target_address}:{port}' for target_address in target_addresses]))
+        udp_sink.set_property('clients', ''.join([f'{target_hostname}:{port}' for target_hostname in target_hostnames]))
 
     udp_sink.set_property('sync', True)
 
@@ -217,14 +217,14 @@ def stream_media(target_addresses, multicast_address, port, codec, wav_file):
     if multicast_address is not None:
         print(f'Streaming {wav_file}: {multicast_address}')
     else:
-        print(f'Streaming {wav_file}: ' + ', '.join(target_addresses))
+        print(f'Streaming {wav_file}: ' + ', '.join(target_hostnames))
 
     pipeline.set_state(Gst.State.PLAYING)
     main_loop.run()
     pipeline.set_state(Gst.State.NULL)
 
 
-def stop_media(target_addresses, timeout, username, password):
+def stop_media(target_hostnames, timeout, username, password):
     content = '<?xml version="1.0" charset="UTF-8">' \
         '<stopMedia>' \
           '<mediaStream />' \
@@ -233,12 +233,12 @@ def stop_media(target_addresses, timeout, username, password):
     with concurrent.futures.ThreadPoolExecutor(max_workers = 32) as executor:
         futures = {}
 
-        for target_address in target_addresses:
-            future = executor.submit(cgi_execute, target_address, timeout, username, password, content)
-            futures[future] = target_address
+        for target_hostname in target_hostnames:
+            future = executor.submit(cgi_execute, target_hostname, timeout, username, password, content)
+            futures[future] = target_hostname
 
         for future in concurrent.futures.as_completed(futures):
-            target_address = futures[future]
+            target_hostname = futures[future]
 
             try:
                 document = etree.fromstring(future.result())
@@ -247,17 +247,18 @@ def stop_media(target_addresses, timeout, username, password):
                     raise ProgramError(document.get('Number', '0'))
 
             except Exception as error:
-                print(f'Error {target_address}: {error}')
+                print(f'Error {target_hostname}: {error}')
 
 
 def main():
-    short_options = 'f:t:m:P:v:c:u:p:h'
+    short_options = 'f:t:m:P:v:c:u:p:H'
     long_options = ['file=', 'timeout=', 'multicast=', 'port=', 'volume=', 'codec=', 'username=', 'password=', 'help']
 
     try:
         options, arguments = getopt.gnu_getopt(sys.argv[1:], short_options, long_options)
     except getopt.GetoptError as error:
-        raise ProgramError(error.msg[0].upper() + error.msg[1:])
+        raise ProgramError(error.msg[0].upper() + error.msg[1:] +
+                           '. Try \'' + os.path.basename(sys.argv[0]) + ' --help\' for more information')
 
     wav_file = None
     timeout = 3
@@ -284,7 +285,7 @@ def main():
                 multicast_address = ipaddress.IPv4Address(argument)
 
                 if not multicast_address.is_multicast:
-                    raise ProgramError('Invalid multicast IP-address: {argument}')
+                    raise ipaddress.AddressValueError
 
             except ipaddress.AddressValueError:
                 raise ProgramError(f'Invalid multicast IP-address: {argument}')
@@ -313,50 +314,48 @@ def main():
         elif option in ('-p', '--password'):
             password = argument
 
-        elif option in ('-h', '--help'):
+        elif option in ('-H', '--help'):
             help = True
 
     if help:
-        print('Usage: ' + os.path.basename(sys.argv[0]) + ' -f FILE [OPTIONS] IP-ADDRESS...\n'
+        print('Usage: ' + os.path.basename(sys.argv[0]) + ' -f FILE [OPTIONS] TARGET-HOST...\n'
               'Stream media to one or more Cisco IP Phones\n'
               '\n'
-              '  -f, --file FILENAME           .wav file to stream\n'
+              '  -f, --file FILE               .wav file to stream\n'
               '  -t, --timeout TIMEOUT         request timeout in seconds (default 3)\n'
               '  -m, --multicast IP-ADDRESS    multicast the stream instead of using multiple unicast streams\n'
               '  -P, --port PORT               destination port on phone (default 20480)\n'
               '  -v, --volume VOLUME           volume percent (1-100) on phone\n'
               '  -c, --codec CODEC             g711 or g722 (default g711)\n'
               '  -u, --username USERNAME       authentication username\n'
-              '  -p, --password PASSWORD       authentication password\n')
+              '  -p, --password PASSWORD       authentication password\n'
+              '  -H, --help                    print this help and exit\n')
 
         return
 
     if not len(arguments):
-        raise ProgramError('No target IP-addresses specified')
+        raise ProgramError('No target hosts specified')
 
-    target_addresses = []
+    target_hostnames = []
 
     for argument in arguments:
-        try:
-            target_address = ipaddress.IPv4Address(argument)
-        except ipaddress.AddressValueError:
-            raise ProgramError(f'Invalid IP-address: {argument}')
+        if not re.search('(?xi) ^ (?: [a-z0-9\-]+ \.)* [a-z0-9\-]+ $', argument):
+            raise ProgramError(f'Invalid target host: {argument}')
 
-        target_address = target_address.compressed
-        target_addresses.append(target_address)
+        target_hostnames.append(argument)
 
     if wav_file is None:
-        raise ProgramError('No -f/--file specified')
+        raise ProgramError('No .wav file specified')
 
-    start_media(target_addresses, multicast_address, port, timeout, volume, codec, username, password)
+    start_media(target_hostnames, multicast_address, port, timeout, volume, codec, username, password)
 
-    if len(target_addresses):
+    if len(target_hostnames):
         try:
-            stream_media(target_addresses, multicast_address, port, codec, wav_file)
+            stream_media(target_hostnames, multicast_address, port, codec, wav_file)
         except Exception as error:
             print(f'{error}', file = sys.stderr)
 
-        stop_media(target_addresses, timeout, username, password)
+        stop_media(target_hostnames, timeout, username, password)
 
 
 if __name__ == '__main__':
