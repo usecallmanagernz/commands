@@ -87,16 +87,18 @@ def main():
 
     for option, argument in options:
         if option in ('-h', '--host'):
-            if not re.search(r'(?xi) ^ (?: [a-z0-9\-]+ \.)* [a-z0-9\-]+ $', argument):
-                raise ProgramError(f'Invalid host: {argument}')
-
             hostname = argument
 
+            if not re.search(r'(?xi) ^ (?: [a-z0-9\-]+ \.)* [a-z0-9\-]+ $', hostname):
+                raise ProgramError(f'Invalid host: {hostname}')
+
         elif option in ('-t', '--timeout'):
+            timeout = argument
+
             try:
-                timeout = int(argument)
+                timeout = int(timeout)
             except ValueError:
-                raise ProgramError(f'Invalid timeout: {argument}')
+                raise ProgramError(f'Invalid timeout: {timeout}')
 
         elif option in ('-u', '--username'):
             username = argument

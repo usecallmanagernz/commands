@@ -275,38 +275,44 @@ def main():
             wav_file = argument
 
         elif option in ('-t', '--timeout'):
+            timeout = argument
+
             try:
-                timeout = int(argument)
+                timeout = int(timeout)
             except ValueError:
-                raise ProgramError(f'Invalid timeout: {argument}')
+                raise ProgramError(f'Invalid timeout: {timeout}')
 
         elif option in ('-m', '--multicast'):
+            multicast_address = argument
+
             try:
-                multicast_address = ipaddress.IPv4Address(argument)
+                multicast_address = ipaddress.IPv4Address(multicast_address)
 
                 if not multicast_address.is_multicast:
                     raise ipaddress.AddressValueError
 
             except ipaddress.AddressValueError:
-                raise ProgramError(f'Invalid multicast IP-address: {argument}')
+                raise ProgramError(f'Invalid multicast IP-address: {multicast_address}')
 
             multicast_address = multicast_address.compressed
 
         elif option in ('-v', '--volume'):
+            volume = argument
+
             try:
-                volume = int(argument)
+                volume = int(volume)
 
                 if volume < 0 or volume > 100:
                     raise ValueError
 
             except ValueError:
-                raise ProgramError(f'Invalid volume: {argument}')
+                raise ProgramError(f'Invalid volume: {volume}')
 
         elif option in ('-c', '--codec'):
-            if argument not in ('g711', 'g722'):
-                raise ProgramError(f'Invalid codec: {argument}')
-
             codec = argument
+
+            if codec not in ('g711', 'g722'):
+                raise ProgramError(f'Invalid codec: {codec}')
 
         elif option in ('-u', '--username'):
             username = argument
