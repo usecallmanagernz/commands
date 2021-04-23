@@ -12,13 +12,13 @@ import getopt
 import traceback
 import socket
 import ipaddress
+import concurrent.futures
 from lxml import etree
 import requests
 import requests.auth
 import gi
 gi.require_version('Gst', '1.0')
 from gi.repository import GObject, GLib, Gst
-import concurrent.futures
 
 
 class ProgramError(Exception):
@@ -31,12 +31,16 @@ def cgi_execute(target_hostname, timeout, username, password, content):
     else:
         auth = None
 
-    response = requests.post(f'http://{target_hostname}:80/CGI/Execute',
-                             timeout = timeout, auth = auth, data = {'XML': content})
-    response.raise_for_status()
+    try:
+        response = requests.post(f'http://{target_hostname}:80/CGI/Execute',
+                                 timeout = timeout, auth = auth, data = {'XML': content})
+        response.raise_for_status()
+
+    except requests.RequestException as error:
+        raise ProgramError(error)
 
     if response.headers['Content-Type'][0:8] != 'text/xml':
-        raise ProgramError('Unexpected Content-Type ' + response.headers['Content-Type'])
+        raise ProgramError('Unexpected Content-Type: ' + response.headers['Content-Type'])
 
     return response.content
 
@@ -344,11 +348,11 @@ def main():
 
     target_hostnames = []
 
-    for argument in arguments:
-        if not re.search('(?xi) ^ (?: [a-z0-9\-]+ \.)* [a-z0-9\-]+ $', argument):
-            raise ProgramError(f'Invalid target host: {argument}')
+    for target_hostname in arguments:
+        if not re.search('(?xi) ^ (?: [a-z0-9\-]+ \.)* [a-z0-9\-]+ $', target_hostname):
+            raise ProgramError(f'Invalid target host: {target_hostname}')
 
-        target_hostnames.append(argument)
+        target_hostnames.append(target_hostname)
 
     if wav_file is None:
         raise ProgramError('No .wav file specified')
