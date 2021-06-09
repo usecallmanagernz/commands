@@ -19,7 +19,7 @@ import requests
 import requests.auth
 import gi
 gi.require_version('Gst', '1.0')
-from gi.repository import GObject, GLib, Gst
+from gi.repository import GLib, Gst
 
 
 class ProgramError(Exception):
@@ -100,7 +100,7 @@ def stream_media(target_hostnames, multicast_address, port, codec, wav_file):
     file_src = Gst.ElementFactory.make('filesrc', None)
 
     if file_src is None:
-        raise PogramError('No \'filesrc\' plugin')
+        raise ProgramError('No \'filesrc\' plugin')
 
     file_src.set_property('location', wav_file)
 
@@ -171,7 +171,7 @@ def stream_media(target_hostnames, multicast_address, port, codec, wav_file):
 
     udp_sink.set_property('sync', True)
 
-    def bus_message(self, message, main_loop):
+    def bus_message(unused, message, main_loop):
         if message.type == Gst.MessageType.EOS:
             main_loop.quit()
 
@@ -320,11 +320,11 @@ def main():
                 if codec not in ('g711', 'g722'):
                     raise ProgramError(f'Invalid codec: {codec}')
 
-                elif option in ('-u', '--username'):
-                    username = argument
+            elif option in ('-u', '--username'):
+                username = argument
 
-                elif option in ('-p', '--password'):
-                    password = argument
+            elif option in ('-p', '--password'):
+                password = argument
 
             elif option in ('-H', '--help'):
                 help = True
@@ -351,7 +351,7 @@ def main():
         target_hostnames = []
 
         for target_hostname in arguments:
-            if not re.search('(?xi) ^ (?: [a-z0-9\-]+ \.)* [a-z0-9\-]+ $', target_hostname):
+            if not re.search(r'(?xi) ^ (?: [a-z0-9\-]+ \.)* [a-z0-9\-]+ $', target_hostname):
                 raise ProgramError(f'Invalid target host: {target_hostname}')
 
             target_hostnames.append(target_hostname)

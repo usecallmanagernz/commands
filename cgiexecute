@@ -148,10 +148,10 @@ def main():
                     url, priority = argument, 0
 
                 if not re.search(r'(?x) ^ (?: (?: Dial | EditDial) : [0-9#*]+'
-                                 ' | (?: Key | SoftKey | Init) : [a-zA-Z]+'
-                                 ' | Play : [a-zA-Z0-9._\-]+'
-                                 ' | Display : (?: Off | On | Default) (:? : [0-9]+)?'
-                                 ' | https? :// [^ ]+) $', url):
+                                 r' | (?: Key | SoftKey | Init) : [a-zA-Z]+'
+                                 r' | Play : [a-zA-Z0-9._\-]+'
+                                 r' | Display : (?: Off | On | Default) (:? : [0-9]+)?'
+                                 r' | https? :// [^ ]+) $', url):
                     raise ProgramError(f'Invalid URL: {url}')
 
             if len(urls) == 3:
