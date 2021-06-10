@@ -4,9 +4,24 @@ on:
   push:
     branches:
       - master
+    paths:
+      - cgiexecute
+      - mediastream
+      - screenshot
+      - setbackground
+      - setringtone
+      - xmlinfo
+
   pull_request:
     branches:
       - master
+    paths:
+      - cgiexecute
+      - mediastream
+      - screenshot
+      - setbackground
+      - setringtone
+      - xmlinfo
 
 jobs:
   xmllint:
