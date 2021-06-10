@@ -1,3 +1,5 @@
+[![python lint check](https://github.com/usecallmanagernz/commands/actions/workflows/pylint.yml/badge.svg?branch=master)](https://github.com/usecallmanagernz/commands/actions/workflows/pylint.yml)
+
 # Command Line Utilities
 
 This respository contains a set of command line utilities that 
