@@ -171,7 +171,7 @@ def stream_media(target_hostnames, multicast_address, port, codec, wav_file):
 
     udp_sink.set_property('sync', True)
 
-    def bus_message(unused, message, main_loop):
+    def bus_message(self, message, main_loop):
         if message.type == Gst.MessageType.EOS:
             main_loop.quit()
 

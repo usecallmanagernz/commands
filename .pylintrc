@@ -4,7 +4,7 @@ dummy-variables-rgx=(_+[a-zA-Z0-9]*?$)|dummy|unused
 extension-pkg-whitelist=lxml
 
 [MESSAGES CONTROL]
-disable=missing-module-docstring,missing-class-docstring,missing-function-docstring,line-too-long,bad-whitespace,too-many-branches,too-many-statements,too-many-arguments,too-many-locals,redefined-builtin,redefined-argument-from-local,no-else-continue,broad-except,consider-using-sys-exit,len-as-condition,invalid-name,unused-argument,wrong-import-position
+disable=missing-module-docstring,missing-class-docstring,missing-function-docstring,bad-whitespace,invalid-name,redefined-builtin,broad-except,consider-using-sys-exit,too-many-branches,too-many-statements,too-many-arguments,line-too-long,too-many-locals,len-as-condition,wrong-import-position,unused-argument,duplicate-code
 
 [REPORTS]
 output-format=text
