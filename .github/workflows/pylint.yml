@@ -1,4 +1,4 @@
-name: python lint check
+name: python lint
   
 on:
   push:
@@ -24,8 +24,8 @@ on:
       - xmlinfo
 
 jobs:
-  xmllint:
-    name: Run python lint check
+  lint:
+    name: Run python linter 
     runs-on: ubuntu-latest
 
     steps:
