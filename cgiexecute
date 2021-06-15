@@ -144,15 +144,15 @@ def main():
 
                 except ValueError:
                     raise ProgramError(f'Invalid priority: {priority}')
-                else:
-                    url, priority = argument, 0
+            else:
+               url, priority = argument, 0
 
-                if not re.search(r'(?x) ^ (?: (?: Dial | EditDial) : [0-9#*]+'
-                                 r' | (?: Key | SoftKey | Init) : [a-zA-Z]+'
-                                 r' | Play : [a-zA-Z0-9._\-]+'
-                                 r' | Display : (?: Off | On | Default) (:? : [0-9]+)?'
-                                 r' | https? :// [^ ]+) $', url):
-                    raise ProgramError(f'Invalid URL: {url}')
+            if not re.search(r'(?x) ^ (?: (?: Dial | EditDial) : [0-9#*]+'
+                             r' | (?: Key | SoftKey | Init) : [a-zA-Z]+'
+                             r' | Play : [a-zA-Z0-9._\-]+'
+                             r' | Display : (?: Off | On | Default) (:? : [0-9]+)?'
+                             r' | https? :// [^ ]+) $', url):
+                raise ProgramError(f'Invalid URL: {url}')
 
             if len(urls) == 3:
                 raise ProgramError('A maximum of 3 URLs can be specified')
