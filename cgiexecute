@@ -145,7 +145,7 @@ def main():
                 except ValueError:
                     raise ProgramError(f'Invalid priority: {priority}')
             else:
-               url, priority = argument, 0
+                url, priority = argument, 0
 
             if not re.search(r'(?x) ^ (?: (?: Dial | EditDial) : [0-9#*]+'
                              r' | (?: Key | SoftKey | Init) : [a-zA-Z]+'
