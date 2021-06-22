@@ -113,17 +113,17 @@ def main():
 
         if help:
             print('Usage: ' + os.path.basename(sys.argv[0]) + ' [OPTIONS] URL[@PRIORITY]...\n'
-                  'Send CGI Execute URLs to a Cisco IP Phone\n'
+                  'Send CGI Execute URLs to a Cisco IP Phone.\n'
                   '\n'
-                  '  -h, --host HOST            host name or IP-address of the phone\n'
+                  '  -h, --host HOST            host name or IP address of the phone\n'
                   '  -t, --timeout TIMEOUT      request timeout in seconds (default 10)\n'
                   '  -u, --username USERNAME    authentication username\n'
                   '  -p, --password PASSWORD    authentication password\n'
                   '  -H, --help                 print this help and exit\n'
                   '\n'
-                  'Up to 3 URLs may be specified\n'
+                  'Up to 3 URLs may be specified.\n'
                   'URL is one of Dial:, EditDial:, Key:, SoftKey:, Init:, Play:, Display:, http: or https:\n'
-                  'Optional PRIORITY is either 0 (immediately), 1 (when idle) or 2 (only if idle)\n')
+                  'Optional PRIORITY is either 0 (immediately), 1 (when idle) or 2 (only if idle).\n')
 
             return
 

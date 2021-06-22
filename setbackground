@@ -87,16 +87,16 @@ def main():
 
         if help:
             print('Usage: ' + os.path.basename(sys.argv[0]) + ' [OPTIONS] IMAGE ICON\n'
-                  'Set the background image on a Cisco IP Phone\n'
+                  'Set the background image on a Cisco IP Phone.\n'
                   '\n'
-                  '  -h, --host HOST            host name or IP-address of the phone\n'
+                  '  -h, --host HOST            host name or IP address of the phone\n'
                   '  -t, --timeout TIMEOUT      request timeout in seconds (default 10)\n'
                   '  -u, --username USERNAME    authentication username\n'
                   '  -p, --password PASSWORD    authentication password\n'
                   '  -H, --help                 print this help and exit\n'
                   '\n'
-                  'IMAGE and ICON are either an http: or https: URL\n'
-                  'ICON is the thumbnail preview of the image\n')
+                  'IMAGE and ICON are either an http: or https: URL.\n'
+                  'ICON is the thumbnail preview of the image.\n')
 
             return
 

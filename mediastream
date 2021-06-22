@@ -298,7 +298,7 @@ def main():
                         raise ipaddress.AddressValueError
 
                 except ipaddress.AddressValueError:
-                    raise ProgramError(f'Invalid multicast IP-address: {multicast_address}')
+                    raise ProgramError(f'Invalid multicast IP address: {multicast_address}')
 
                 multicast_address = multicast_address.compressed
 
@@ -331,11 +331,11 @@ def main():
 
         if help:
             print('Usage: ' + os.path.basename(sys.argv[0]) + ' -f FILE [OPTIONS] TARGET-HOST...\n'
-                  'Stream media to one or more Cisco IP Phones\n'
+                  'Stream media to one or more Cisco IP Phones.\n'
                   '\n'
                   '  -f, --file FILE               .wav file to stream\n'
                   '  -t, --timeout TIMEOUT         request timeout in seconds (default 3)\n'
-                  '  -m, --multicast IP-ADDRESS    multicast the stream instead of using multiple unicast streams\n'
+                  '  -m, --multicast ADDRESS       multicast the stream instead of using multiple unicast streams\n'
                   '  -P, --port PORT               destination port on phone (default 20480)\n'
                   '  -v, --volume VOLUME           volume percent (1-100) on phone\n'
                   '  -c, --codec CODEC             g711 or g722 (default g711)\n'
