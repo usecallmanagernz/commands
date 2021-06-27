@@ -1,4 +1,4 @@
-[![python lint](https://github.com/usecallmanagernz/commands/actions/workflows/pylint.yml/badge.svg?branch=master)](https://github.com/usecallmanagernz/commands/actions/workflows/pylint.yml)
+[![python lint](https://github.com/usecallmanagernz/commands/actions/workflows/pylint.yml/badge.svg?branch=master)](https://github.com/usecallmanagernz/commands/actions/workflows/pylint.yml) ![GitHub tag (latest SemVer)](https://img.shields.io/github/v/tag/usecallmanagernz/commands?color=blue&label=version&sort=semver)
 
 # Command Line Utilities
 
@@ -20,8 +20,8 @@ You can use the packages provided by your OS distribution or run
 `sudo pip3 install -r requirements.txt` to satisfy those dependancies.
 
 To use `mediastream` you will need to also install GStreamer and the Glib
-Glib object bindings. Installation is OS dependant, the following example shows
-how to install those packages on Debian/Ubuntu:
+object bindings. Installation is OS dependant, the following example shows how
+to install those packages on Debian/Ubuntu:
 
 ```sh
 sudo apt install python3-gi python3-gst-1.0 \
