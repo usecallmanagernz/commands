@@ -1,4 +1,4 @@
-[![python lint](https://github.com/usecallmanagernz/commands/actions/workflows/pylint.yml/badge.svg?branch=master)](https://github.com/usecallmanagernz/commands/actions/workflows/pylint.yml) ![GitHub tag (latest SemVer)](https://img.shields.io/github/v/tag/usecallmanagernz/commands?color=blue&label=version&sort=semver)
+![GitHub Workflow Status (branch)](https://img.shields.io/github/workflow/status/usecallmanagernz/commands/python%20lint/master?label=shell%20lint) ![GitHub tag (latest SemVer)](https://img.shields.io/github/v/tag/usecallmanagernz/commands?color=blue&label=version&sort=semver)
 
 # Command Line Utilities
 
