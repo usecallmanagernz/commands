@@ -17,6 +17,7 @@ import concurrent.futures
 from lxml import etree
 import requests
 import requests.auth
+import requests.adapters
 import gi
 gi.require_version('Gst', '1.0')
 from gi.repository import GLib, Gst
@@ -26,15 +27,26 @@ class ProgramError(Exception):
     pass
 
 
-def cgi_execute(target_hostname, timeout, username, password, content):
+class HTTPSAdapter(requests.adapters.HTTPAdapter):
+    def init_poolmanager(self, *args, **kwargs):
+        kwargs['assert_hostname'] = False
+        super().init_poolmanager(*args, **kwargs)
+
+
+def cgi_execute(target_hostname, timeout, username, password, certificate, xml):
     if username != '':
         auth = requests.auth.HTTPBasicAuth(username, password)
     else:
         auth = None
 
+    scheme = 'https' if certificate else 'http'
+
     try:
-        response = requests.post(f'http://{target_hostname}:80/CGI/Execute',
-                                 timeout = timeout, auth = auth, data = {'XML': content})
+        session = requests.Session()
+        session.mount('https://', HTTPSAdapter())
+
+        response = session.post(f'{scheme}://{target_hostname}/CGI/Execute',
+                                timeout = timeout, auth = auth, verify = certificate, data = {'XML': xml})
         response.raise_for_status()
 
     except requests.RequestException as error:
@@ -46,18 +58,18 @@ def cgi_execute(target_hostname, timeout, username, password, content):
     return response.content
 
 
-def start_media(target_hostnames, multicast_address, port, timeout, volume, codec, username, password):
+def start_media(target_hostnames, multicast_address, port, timeout, username, password, certificate, volume, codec):
     if multicast_address is not None:
         source_address = multicast_address
     else:
-        # find our source address using the first target host
+        # Find our source address using the first target host
         udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         udp_socket.connect((target_hostnames[0], 0))
 
         source_address = udp_socket.getsockname()[0]
         udp_socket.close()
 
-    content = '<?xml version="1.0" charset="UTF-8">' \
+    xml = '<?xml version="1.0" charset="UTF-8">' \
         '<startMedia>' \
           '<mediaStream' + (' receiveVolume="' + str(volume) + '"' if volume != -1 else '') + '>' \
             '<type>audio</type>' \
@@ -72,7 +84,7 @@ def start_media(target_hostnames, multicast_address, port, timeout, volume, code
         futures = {}
 
         for target_hostname in target_hostnames:
-            future = executor.submit(cgi_execute, target_hostname, timeout, username, password, content)
+            future = executor.submit(cgi_execute, target_hostname, timeout, username, password, certificate, xml)
             futures[future] = target_hostname
 
         for future in concurrent.futures.as_completed(futures):
@@ -88,7 +100,7 @@ def start_media(target_hostnames, multicast_address, port, timeout, volume, code
                     raise ProgramError(f'Unexpected XML: {document.tag}')
 
             except Exception as error:
-                # remove address so we don't try and send it audio
+                # Remove address so we don't try and send it audio
                 target_hostnames.remove(target_hostname)
 
                 print(f'Error {target_hostname}: {error}')
@@ -204,7 +216,7 @@ def stream_media(target_hostnames, multicast_address, port, codec, wav_file):
 
     pipeline.add(udp_sink)
 
-    # only link elements after they have been added to the pipeline
+    # Only link elements after they have been added to the pipeline
     file_src.link(wav_parse)
     wav_parse.link(audio_convert)
     audio_convert.link(audio_resample)
@@ -229,8 +241,8 @@ def stream_media(target_hostnames, multicast_address, port, codec, wav_file):
     pipeline.set_state(Gst.State.NULL)
 
 
-def stop_media(target_hostnames, timeout, username, password):
-    content = '<?xml version="1.0" charset="UTF-8">' \
+def stop_media(target_hostnames, timeout, username, password, certificate):
+    xml = '<?xml version="1.0" charset="UTF-8">' \
         '<stopMedia>' \
           '<mediaStream />' \
         '</stopMedia>'
@@ -239,7 +251,7 @@ def stop_media(target_hostnames, timeout, username, password):
         futures = {}
 
         for target_hostname in target_hostnames:
-            future = executor.submit(cgi_execute, target_hostname, timeout, username, password, content)
+            future = executor.submit(cgi_execute, target_hostname, timeout, username, password, certificate, xml)
             futures[future] = target_hostname
 
         for future in concurrent.futures.as_completed(futures):
@@ -257,8 +269,8 @@ def stop_media(target_hostnames, timeout, username, password):
 
 def main():
     try:
-        short_options = 'f:t:m:P:v:c:u:p:H'
-        long_options = ['file=', 'timeout=', 'multicast=', 'port=', 'volume=', 'codec=', 'username=', 'password=', 'help']
+        short_options = 'f:t:m:P:v:C:u:p:c:H'
+        long_options = ['file=', 'timeout=', 'multicast=', 'port=', 'volume=', 'codec=', 'username=', 'password=', 'certificate=', 'help']
 
         try:
             options, arguments = getopt.gnu_getopt(sys.argv[1:], short_options, long_options)
@@ -274,6 +286,7 @@ def main():
         codec = 'g711'
         username = ''
         password = ''
+        certificate = None
         help = False
 
         for option, argument in options:
@@ -302,6 +315,18 @@ def main():
 
                 multicast_address = multicast_address.compressed
 
+            elif option in ('-P', '--port'):
+                port = argument
+
+                try:
+                    port = int(port)
+
+                    if port < 20480 or port > 65535 or port % 2:
+                        raise ValueError
+
+                except ValueError:
+                    raise ProgramError(f'Invalid port: {port}')
+
             elif option in ('-v', '--volume'):
                 volume = argument
 
@@ -314,7 +339,7 @@ def main():
                 except ValueError:
                     raise ProgramError(f'Invalid volume: {volume}')
 
-            elif option in ('-c', '--codec'):
+            elif option in ('-C', '--codec'):
                 codec = argument
 
                 if codec not in ('g711', 'g722'):
@@ -326,6 +351,9 @@ def main():
             elif option in ('-p', '--password'):
                 password = argument
 
+            elif option in ('-c', '--certificate'):
+                certificate = argument
+
             elif option in ('-H', '--help'):
                 help = True
 
@@ -333,15 +361,16 @@ def main():
             print('Usage: ' + os.path.basename(sys.argv[0]) + ' -f FILE [OPTIONS] TARGET-HOST...\n'
                   'Stream media to one or more Cisco IP Phones.\n'
                   '\n'
-                  '  -f, --file FILE               .wav file to stream\n'
-                  '  -t, --timeout TIMEOUT         request timeout in seconds (default 3)\n'
-                  '  -m, --multicast ADDRESS       multicast the stream instead of using multiple unicast streams\n'
-                  '  -P, --port PORT               destination port on phone (default 20480)\n'
-                  '  -v, --volume VOLUME           volume percent (1-100) on phone\n'
-                  '  -c, --codec CODEC             g711 or g722 (default g711)\n'
-                  '  -u, --username USERNAME       authentication username\n'
-                  '  -p, --password PASSWORD       authentication password\n'
-                  '  -H, --help                    print this help and exit\n')
+                  '  -f, --file FILE                .wav file to stream\n'
+                  '  -t, --timeout TIMEOUT          request timeout in seconds (default 3)\n'
+                  '  -m, --multicast ADDRESS        multicast the stream instead of using multiple unicast streams\n'
+                  '  -P, --port PORT                destination port on phone (default 20480)\n'
+                  '  -v, --volume VOLUME            volume percent (1-100) on phone\n'
+                  '  -C, --codec CODEC              g711 or g722 (default g711)\n'
+                  '  -u, --username USERNAME        authentication username\n'
+                  '  -p, --password PASSWORD        authentication password\n'
+                  '  -c, --certificate CERT-FILE    connect using SSL and verify using certificate\n'
+                  '  -H, --help                     print this help and exit\n')
 
             return
 
@@ -360,7 +389,7 @@ def main():
             raise ProgramError('No .wav file specified')
 
         # Invalid hostnames will be removed from the list
-        start_media(target_hostnames, multicast_address, port, timeout, volume, codec, username, password)
+        start_media(target_hostnames, multicast_address, port, timeout, username, password, certificate, volume, codec)
 
         if len(target_hostnames):
             try:
@@ -368,7 +397,7 @@ def main():
             except Exception as error:
                 print(f'{error}', file = sys.stderr)
 
-            stop_media(target_hostnames, timeout, username, password)
+            stop_media(target_hostnames, timeout, username, password, certificate)
 
     except ProgramError as error:
         print(str(error), file = sys.stderr)

@@ -11,13 +11,20 @@ import getopt
 import traceback
 from html import escape
 
-from lxml import etree
 import requests
 import requests.auth
+import requests.adapters
+from lxml import etree
 
 
 class ProgramError(Exception):
     pass
+
+
+class HTTPSAdapter(requests.adapters.HTTPAdapter):
+    def init_poolmanager(self, *args, **kwargs):
+        kwargs['assert_hostname'] = False
+        super().init_poolmanager(*args, **kwargs)
 
 
 cgi_errors = {
@@ -28,23 +35,28 @@ cgi_errors = {
 }
 
 
-def cgi_execute(hostname, timeout, urls, username, password):
-    content = '<?xml version="1.0" encoding="UTF-8"?>' \
+def cgi_execute(hostname, port, timeout, username, password, certificate, urls):
+    xml = '<?xml version="1.0" encoding="UTF-8"?>' \
 	'<CiscoIPPhoneExecute>'
 
     for url, priority in urls:
-        content += '<ExecuteItem URL="' + escape(url) + '" Priority="' + str(priority) + '" />'
+        xml += '<ExecuteItem URL="' + escape(url) + '" Priority="' + str(priority) + '" />'
 
-    content += '</CiscoIPPhoneExecute>'
+    xml += '</CiscoIPPhoneExecute>'
 
     if username != '':
         auth = requests.auth.HTTPBasicAuth(username, password)
     else:
         auth = None
 
+    scheme = 'https' if certificate else 'http'
+
     try:
-        response = requests.post(f'http://{hostname}:80/CGI/Execute',
-                                 timeout = timeout, auth = auth, data = {'XML': content})
+        session = requests.Session()
+        session.mount('https://', HTTPSAdapter())
+
+        response = session.post(f'{scheme}://{hostname}:{port}/CGI/Execute',
+                                timeout = timeout, auth = auth, verify = certificate, data = {'XML': xml})
         response.raise_for_status()
 
     except requests.RequestException as error:
@@ -72,8 +84,8 @@ def cgi_execute(hostname, timeout, urls, username, password):
 
 def main():
     try:
-        short_options = 'h:t:u:p:H'
-        long_options = ['host=', 'timeout=', 'username=', 'password=', 'help']
+        short_options = 'h:t:u:p:c:H'
+        long_options = ['host=', 'timeout=', 'username=', 'password=', 'certificate=', 'help']
 
         try:
             options, arguments = getopt.gnu_getopt(sys.argv[1:], short_options, long_options)
@@ -82,14 +94,28 @@ def main():
                                '. Try \'' + os.path.basename(sys.argv[0]) + ' --help\' for more information')
 
         hostname = None
+        port = None
         timeout = 10
         username = ''
         password = ''
+        certificate = None
         help = False
 
         for option, argument in options:
             if option in ('-h', '--host'):
                 hostname = argument
+
+                if ':' in hostname:
+                    hostname, port = hostname.rsplit(':', maxsplit = 1)
+
+                    try:
+                        port = int(port)
+
+                        if port < 1 or port > 65535:
+                            raise ValueError
+
+                    except ValueError:
+                        raise ProgramError(f'Invalid port: {port}')
 
                 if not re.search(r'(?xi) ^ (?: [a-z0-9\-]+ \.)* [a-z0-9\-]+ $', hostname):
                     raise ProgramError(f'Invalid host: {hostname}')
@@ -108,6 +134,9 @@ def main():
             elif option in ('-p', '--password'):
                 password = argument
 
+            elif option in ('-c', '--certificate'):
+                certificate = argument
+
             elif option in ('-H', '--help'):
                 help = True
 
@@ -115,11 +144,12 @@ def main():
             print('Usage: ' + os.path.basename(sys.argv[0]) + ' [OPTIONS] URL[@PRIORITY]...\n'
                   'Send CGI Execute URLs to a Cisco IP Phone.\n'
                   '\n'
-                  '  -h, --host HOST            host name or IP address of the phone\n'
-                  '  -t, --timeout TIMEOUT      request timeout in seconds (default 10)\n'
-                  '  -u, --username USERNAME    authentication username\n'
-                  '  -p, --password PASSWORD    authentication password\n'
-                  '  -H, --help                 print this help and exit\n'
+                  '  -h, --host HOST[:PORT]         host name or IP address and port of the phone\n'
+                  '  -t, --timeout TIMEOUT          connection timeout in seconds (default 10)\n'
+                  '  -u, --username USERNAME        authentication username\n'
+                  '  -p, --password PASSWORD        authentication password\n'
+                  '  -c, --certificate CERT-FILE    connect using SSL and verify using certificate\n'
+                  '  -H, --help                     print this help and exit\n'
                   '\n'
                   'Up to 3 URLs may be specified.\n'
                   'URL is one of Dial:, EditDial:, Key:, SoftKey:, Init:, Play:, Display:, http: or https:\n'
@@ -133,7 +163,9 @@ def main():
         urls = []
 
         for argument in arguments:
-            if '@' in argument:
+            url = argument
+
+            if '@' in url:
                 url, priority = argument.rsplit('@', maxsplit = 1)
 
                 try:
@@ -145,7 +177,7 @@ def main():
                 except ValueError:
                     raise ProgramError(f'Invalid priority: {priority}')
             else:
-                url, priority = argument, 0
+                priority = 0
 
             if not re.search(r'(?x) ^ (?: (?: Dial | EditDial) : [0-9#*]+'
                              r' | (?: Key | SoftKey | Init) : [a-zA-Z0-9]+'
@@ -162,7 +194,10 @@ def main():
         if hostname is None:
             raise ProgramError('No host specified')
 
-        cgi_execute(hostname, timeout, urls, username, password)
+        if port is None:
+            port = 443 if certificate else 80
+
+        cgi_execute(hostname, port, timeout, username, password, certificate, urls)
 
     except ProgramError as error:
         print(str(error), file = sys.stderr)

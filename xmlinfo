@@ -10,17 +10,24 @@ import re
 import getopt
 import traceback
 
-from lxml import etree
 import requests
 import requests.auth
+import requests.adapters
+from lxml import etree
 
 
 class ProgramError(Exception):
     pass
 
 
-def get_info(hostname, timeout, info, username, password):
-    # call -> CallInfo, line -> LineInfo, settings -> SettingsInfo, mode -> ModeInfo
+class HTTPSAdapter(requests.adapters.HTTPAdapter):
+    def init_poolmanager(self, *args, **kwargs):
+        kwargs['assert_hostname'] = False
+        super().init_poolmanager(*args, **kwargs)
+
+
+def get_info(hostname, port, timeout, info, username, password, certificate):
+    # Transform: call -> CallInfo, line -> LineInfo, settings -> SettingsInfo, mode -> ModeInfo
     path = info[0].upper() + info[1:] + 'Info'
 
     if username != '':
@@ -28,9 +35,14 @@ def get_info(hostname, timeout, info, username, password):
     else:
         auth = None
 
+    scheme = 'https' if certificate else 'http'
+
     try:
-        response = requests.get(f'http://{hostname}:80/CGI/{path}',
-                                timeout = timeout, auth = auth)
+        session = requests.Session()
+        session.mount('https://', HTTPSAdapter())
+
+        response = session.get(f'{scheme}://{hostname}:{port}/CGI/{path}',
+                               timeout = timeout, auth = auth, verify = certificate)
         response.raise_for_status()
 
     except requests.RequestException as error:
@@ -48,8 +60,8 @@ def get_info(hostname, timeout, info, username, password):
 
 def main():
     try:
-        short_options = 'h:t:u:p:H'
-        long_options = ['host=', 'timeout=', 'username=', 'password=', 'help']
+        short_options = 'h:t:u:p:c:H'
+        long_options = ['host=', 'timeout=', 'username=', 'password=', 'certificate=', 'help']
 
         try:
             options, arguments = getopt.gnu_getopt(sys.argv[1:], short_options, long_options)
@@ -58,14 +70,28 @@ def main():
                                '. Try \'' + os.path.basename(sys.argv[0]) + ' --help\' for more information')
 
         hostname = None
+        port = None
         timeout = 10
         username = ''
         password = ''
+        certificate = None
         help = False
 
         for option, argument in options:
             if option in ('-h', '--host'):
                 hostname = argument
+
+                if ':' in hostname:
+                    hostname, port = hostname.rsplit(':', maxsplit = 1)
+
+                    try:
+                        port = int(port)
+
+                        if port < 1 or port > 65535:
+                            raise ValueError
+
+                    except ValueError:
+                        raise ProgramError(f'Invalid port: {port}')
 
                 if not re.search(r'(?xi) ^ (?: [a-z0-9\-]+ \.)* [a-z0-9\-]+ $', hostname):
                     raise ProgramError(f'Invalid host: {hostname}')
@@ -84,6 +110,9 @@ def main():
             elif option in ('-p', '--password'):
                 password = argument
 
+            elif option in ('-c', '--certificate'):
+                certificate = argument
+
             elif option in ('-H', '--help'):
                 help = True
 
@@ -91,11 +120,12 @@ def main():
             print('Usage: ' + os.path.basename(sys.argv[0]) + ' [OPTIONS] INFO\n'
                   'Get status information as XML from a Cisco IP Phone.\n'
                   '\n'
-                  '  -h, --host HOST            host name or IP address of the phone\n'
-                  '  -t, --timeout TIMEOUT      request timeout in seconds (default 10)\n'
-                  '  -u, --username USERNAME    authentication username\n'
-                  '  -p, --password PASSWORD    authentication password\n'
-                  '  -H, --help                 print this help and exit\n'
+                  '  -h, --host HOST[:PORT]         host name or IP address and port of the phone\n'
+                  '  -t, --timeout TIMEOUT          connection timeout in seconds (default 10)\n'
+                  '  -u, --username USERNAME        authentication username\n'
+                  '  -p, --password PASSWORD        authentication password\n'
+                  '  -c, --certificate CERT-FILE    connect using SSL and verify using certificate\n'
+                  '  -H, --help                     print this help and exit\n'
                   '\n'
                   'INFO is one of either line, call, settings or mode.\n')
 
@@ -112,7 +142,10 @@ def main():
         if hostname is None:
             raise ProgramError('No host specified')
 
-        get_info(hostname, timeout, info, username, password)
+        if port is None:
+            port = 443 if certificate else 80
+
+        get_info(hostname, port, timeout, info, username, password, certificate)
 
     except ProgramError as error:
         print(str(error), file = sys.stderr)
