@@ -5,23 +5,25 @@ on:
     branches:
       - master
     paths:
-      - cgiexecute
-      - mediastream
-      - screenshot
-      - setbackground
-      - setringtone
-      - xmlinfo
+      - 'cgiexecute'
+      - 'mediastream'
+      - 'screenshot'
+      - 'setbackground'
+      - 'setringtone'
+      - 'xmlinfo'
+      - '.github/workflows/pylint.yml'
 
   pull_request:
     branches:
       - master
     paths:
-      - cgiexecute
-      - mediastream
-      - screenshot
-      - setbackground
-      - setringtone
-      - xmlinfo
+      - 'cgiexecute'
+      - 'mediastream'
+      - 'screenshot'
+      - 'setbackground'
+      - 'setringtone'
+      - 'xmlinfo'
+      - '.github/workflows/pylint.yml'
 
 jobs:
   lint:
