@@ -33,20 +33,20 @@ class HTTPSAdapter(requests.adapters.HTTPAdapter):
         super().init_poolmanager(*args, **kwargs)
 
 
-def cgi_execute(target_hostname, timeout, username, password, certificate, xml):
+def cgi_execute(target_hostname, timeout, username, password, certificate_file, xml):
     if username != '':
         auth = requests.auth.HTTPBasicAuth(username, password)
     else:
         auth = None
 
-    scheme = 'https' if certificate else 'http'
+    scheme = 'https' if certificate_file else 'http'
 
     try:
         session = requests.Session()
         session.mount('https://', HTTPSAdapter())
 
         response = session.post(f'{scheme}://{target_hostname}/CGI/Execute',
-                                timeout = timeout, auth = auth, verify = certificate, data = {'XML': xml})
+                                timeout = timeout, auth = auth, verify = certificate_file, data = {'XML': xml})
         response.raise_for_status()
 
     except requests.RequestException as error:
@@ -58,7 +58,7 @@ def cgi_execute(target_hostname, timeout, username, password, certificate, xml):
     return response.content
 
 
-def start_media(target_hostnames, multicast_address, port, timeout, username, password, certificate, volume, codec):
+def start_media(target_hostnames, multicast_address, port, timeout, username, password, certificate_file, volume, codec):
     if multicast_address is not None:
         source_address = multicast_address
     else:
@@ -84,7 +84,7 @@ def start_media(target_hostnames, multicast_address, port, timeout, username, pa
         futures = {}
 
         for target_hostname in target_hostnames:
-            future = executor.submit(cgi_execute, target_hostname, timeout, username, password, certificate, xml)
+            future = executor.submit(cgi_execute, target_hostname, timeout, username, password, certificate_file, xml)
             futures[future] = target_hostname
 
         for future in concurrent.futures.as_completed(futures):
@@ -241,7 +241,7 @@ def stream_media(target_hostnames, multicast_address, port, codec, wav_file):
     pipeline.set_state(Gst.State.NULL)
 
 
-def stop_media(target_hostnames, timeout, username, password, certificate):
+def stop_media(target_hostnames, timeout, username, password, certificate_file):
     xml = '<?xml version="1.0" charset="UTF-8">' \
         '<stopMedia>' \
           '<mediaStream />' \
@@ -251,7 +251,7 @@ def stop_media(target_hostnames, timeout, username, password, certificate):
         futures = {}
 
         for target_hostname in target_hostnames:
-            future = executor.submit(cgi_execute, target_hostname, timeout, username, password, certificate, xml)
+            future = executor.submit(cgi_execute, target_hostname, timeout, username, password, certificate_file, xml)
             futures[future] = target_hostname
 
         for future in concurrent.futures.as_completed(futures):
@@ -286,7 +286,7 @@ def main():
         codec = 'g711'
         username = ''
         password = ''
-        certificate = None
+        certificate_file = None
         help = False
 
         for option, argument in options:
@@ -352,7 +352,7 @@ def main():
                 password = argument
 
             elif option in ('-c', '--certificate'):
-                certificate = argument
+                certificate_file = argument
 
             elif option in ('-H', '--help'):
                 help = True
@@ -389,7 +389,7 @@ def main():
             raise ProgramError('No .wav file specified')
 
         # Invalid hostnames will be removed from the list
-        start_media(target_hostnames, multicast_address, port, timeout, username, password, certificate, volume, codec)
+        start_media(target_hostnames, multicast_address, port, timeout, username, password, certificate_file, volume, codec)
 
         if len(target_hostnames):
             try:
@@ -397,7 +397,7 @@ def main():
             except Exception as error:
                 print(f'{error}', file = sys.stderr)
 
-            stop_media(target_hostnames, timeout, username, password, certificate)
+            stop_media(target_hostnames, timeout, username, password, certificate_file)
 
     except ProgramError as error:
         print(str(error), file = sys.stderr)

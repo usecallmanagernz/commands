@@ -25,20 +25,20 @@ class HTTPSAdapter(requests.adapters.HTTPAdapter):
         super().init_poolmanager(*args, **kwargs)
 
 
-def get_screenshot(hostname, port, timeout, username, password, certificate, screenshot_file):
+def get_screenshot(hostname, port, timeout, username, password, certificate_file, screenshot_file):
     if username != '':
         auth = requests.auth.HTTPBasicAuth(username, password)
     else:
         auth = None
 
-    scheme = 'https' if certificate else 'http'
+    scheme = 'https' if certificate_file else 'http'
 
     try:
         session = requests.Session()
         session.mount('https://', HTTPSAdapter())
 
         response = session.get(f'{scheme}://{hostname}:{port}/CGI/Screenshot',
-                               timeout = timeout, auth = auth, verify = certificate)
+                               timeout = timeout, auth = auth, verify = certificate_file)
         response.raise_for_status()
 
     except requests.RequestException as error:
@@ -73,7 +73,7 @@ def main():
         timeout = 10
         username = ''
         password = ''
-        certificate = None
+        certificate_file = None
         help = False
 
         for option, argument in options:
@@ -110,7 +110,7 @@ def main():
                 password = argument
 
             elif option in ('-c', '--certificate'):
-                certificate = argument
+                certificate_file = argument
 
             elif option in ('-H', '--help'):
                 help = True
@@ -139,9 +139,9 @@ def main():
             raise ProgramError('No host specified')
 
         if port is None:
-            port = 443 if certificate else 80
+            port = 443 if certificate_file else 80
 
-        get_screenshot(hostname, port, timeout, username, password, certificate, screenshot_file)
+        get_screenshot(hostname, port, timeout, username, password, certificate_file, screenshot_file)
 
     except ProgramError as error:
         print(str(error), file = sys.stderr)
