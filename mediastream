@@ -63,11 +63,9 @@ def start_media(target_hostnames, multicast_address, port, timeout, username, pa
         source_address = multicast_address
     else:
         # Find our source address using the first target host
-        udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        udp_socket.connect((target_hostnames[0], 0))
-
-        source_address = udp_socket.getsockname()[0]
-        udp_socket.close()
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_socket:
+            udp_socket.connect((target_hostnames[0], 0))
+            source_address = udp_socket.getsockname()[0]
 
     xml = '<?xml version="1.0" charset="UTF-8">' \
         '<startMedia>' \
