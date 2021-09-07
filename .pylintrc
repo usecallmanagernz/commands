@@ -1,6 +1,5 @@
 [MASTER]
 persistent=no
-dummy-variables-rgx=(_+[a-zA-Z0-9]*?$)|dummy|unused
 extension-pkg-whitelist=lxml
 
 [MESSAGES CONTROL]
