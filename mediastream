@@ -177,7 +177,7 @@ def stream_media(target_hostnames, multicast_address, port, codec, wav_file):
     if multicast_address is not None:
         udp_sink.set_property('clients', f'{multicast_address}:{port}')
     else:
-        udp_sink.set_property('clients', ''.join([f'{target_hostname}:{port}' for target_hostname in target_hostnames]))
+        udp_sink.set_property('clients', ','.join([f'{target_hostname}:{port}' for target_hostname in target_hostnames]))
 
     udp_sink.set_property('sync', True)
 
