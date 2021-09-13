@@ -1,4 +1,4 @@
-[![GitHub Workflow Status (branch)](https://img.shields.io/github/workflow/status/usecallmanagernz/commands/python%20lint/master?label=python%20lint)](https://github.com/usecallmanagernz/commands/actions/workflows/pylint.yml) [![GitHub tag (latest SemVer)](https://img.shields.io/github/v/tag/usecallmanagernz/commands?color=blue&label=version&sort=semver)](https://github.com/usecallmanagernz/commands/releases)
+[![Workflow Status](https://img.shields.io/github/workflow/status/usecallmanagernz/commands/python%20lint/master?label=python%20lint)](https://github.com/usecallmanagernz/commands/actions/workflows/pylint.yml) [![Version](https://img.shields.io/github/v/tag/usecallmanagernz/commands?color=blue&label=version&sort=semver)](https://github.com/usecallmanagernz/commands/releases) [![Licence](https://img.shields.io/github/license/usecallmanagernz/commands?color=red)](LICENSE)
 
 # Command Line Utilities
 
@@ -26,4 +26,17 @@ to install those packages on Debian/Ubuntu:
 ```sh
 sudo apt install python3-gi python3-gst-1.0 \
   libgstreamer-plugins-good-1.0 libgstreamer-plugins-bad-1.0
+```
+
+## Installation
+
+```
+sudo cp cgiexecute mediastream setbackground setringtone \
+  screenshot xmlinfo /usr/local/bin
+```
+
+Optionally, install the bash tab-completion helpers.
+
+```
+sudo cp bash_completion /etc/bash_completion.d/usecallmanagernz-commands
 ```

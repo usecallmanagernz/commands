@@ -1,0 +1,35 @@
+name: shell lint
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'bash_completion'
+      - '.shellcheckrc'
+      - '.github/workflows/shellcheck.yml'
+
+  pull_request:
+    branches:
+      - master
+    paths:
+      - 'bash_completion'
+      - '.shellcheckrc'
+      - '.github/workflows/shellcheck.yml'
+
+jobs:
+  lint:
+    name: Run shell linter
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Install packages
+        run: |
+          sudo apt install shellcheck
+
+      - name: Run shellcheck
+        run: |
+          shellcheck bash_completion

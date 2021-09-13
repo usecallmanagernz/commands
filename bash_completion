@@ -1,0 +1,108 @@
+#!/bin/bash
+
+_cgiexecute_completion() {
+    COMPREPLY=()
+
+    if [[ ${2:0:1} = - ]]; then
+        COMPREPLY=($(compgen -W "-h --host -t --timeout -u --username -p --password  -c --certificate -H --help" -- "$2"))
+    elif [[ $3 == -c || $3 = --certificate ]]; then
+        COMPREPLY=($(compgen -f -- "$2"))
+    else
+        # Because the completion word list contains ':' characters which affect how readline
+        # splits words two special bash completion functions have to be used instead
+
+        local CURWORD
+        _get_comp_words_by_ref -n ":" -c CURWORD
+
+        COMPREPLY=($(compgen -W "Dial: EditDial: Play: \
+                                 Init:Services Init:Directory Init:CallHistory \
+                                 Key:Applications Key:AppMenu Key:Contacts Key:Services \
+                                 Key:Directories Key:Settings Key:Messages Key:Info \
+                                 Key:Feature1 Key:Feature2 Key:Feature3 Key:Feature4 Key:Feature5 Key:Feature6 \
+                                 Key:FixedFeature1 Key:FixedFeature2 Key:FixedFeature3 \
+                                 Key:Soft1 Key:Soft2 Key:Soft3 Key:Soft4 Key:Soft5 \
+                                 Key:Headset Key:Hold Key:Mute Key:Speaker Key:VolUp Key:VolDown \
+                                 Key:Line1 Key:Line2 Key:Line3 Key:Line4 Key:Line5 Key:Line6 \
+                                 Key:Session1 Key:Session2 Key:Session3 Key:Session4 Key:Session5 Key:Session6 \
+                                 Key:NavBack Key:NavDown Key:NavUp Key:NavLeft Key:NavRight Key:NavSelect \
+                                 Key:OffHook Key:OnHook \
+                                 Key:KeyPad0 Key:KeyPad1 Key:KeyPad2 Key:KeyPad3 Key:KeyPad4 Key:KeyPad5 Key:Keypad6 \
+                                 Key:KeyPad7 Key:KeyPad8 Key:KeyPad9 Key:KeyPadStar Key:KeyPadPound \
+                                 SoftKey:Back SoftKey:Cancel SoftKey:Exit SoftKey:Next SoftKey:Search \
+                                 SoftKey:Select SoftKey:Submit SoftKey:Update SoftKey:Dial SoftKey:EditDial SoftKey:\<\< \
+                                 Display:On Display:Off Display:Default \
+                                 http:// https://" -- "$CURWORD"))
+
+        __ltrim_colon_completions "$CURWORD"
+    fi
+
+    return 0
+}
+
+complete -F _cgiexecute_completion cgiexecute
+
+_mediastream_completion() {
+    if [[ ${2:0:1} = - ]]; then
+        COMPREPLY=($(compgen -W "-f --file  -t --timeout -m --multicast -p --port -v --volume -C --codec \
+                                 -u --username -p --password -c --certificate -H --help" -- "$2"))
+    elif [[ $3 == -c || $3 = --codec ]]; then
+        COMPREPLY=($(compgen -W "g711 g722" -- "$2"))
+    else
+        COMPREPLY=($(compgen -f -- "$2"))
+    fi
+
+    return 0
+}
+
+complete -F _mediastream_completion mediastream
+
+_screenshot_completion() {
+    if [[ ${2:0:1} = - ]]; then
+        COMPREPLY=($(compgen -W "-h --host -t --timeout -u --username -p --password -c --certificate -H --help" -- "$2"))
+    else
+        COMPREPLY=($(compgen -f -- "$2"))
+    fi
+
+    return 0
+}
+
+complete -F _screenshot_completion screenshot
+
+_setbackground_completion() {
+    if [[ ${2:0:1} = - ]]; then
+        COMPREPLY=($(compgen -W "-h --host -t --timeout -u --username -p --password -c --certificate -H --help" -- "$2"))
+    else
+        COMPREPLY=($(compgen -f -- "$2"))
+    fi
+
+    return 0
+}
+
+complete -F _setringtone_completion setbackground
+
+_setringtone_completion() {
+    if [[ ${2:0:1} = - ]]; then
+        COMPREPLY=($(compgen -W "-h --host -t --timeout -u --username -p --password -c --certificate -H --help" -- "$2"))
+    else
+        COMPREPLY=($(compgen -f -- "$2"))
+    fi
+
+    return 0
+}
+
+complete -F _setringtone_completion setringtone
+
+_xmlinfo_completion() {
+    if [[ ${2:0:1} = - ]]; then
+        COMPREPLY=($(compgen -W "-h --host -t --timeout -u --username -p --password -c --certificate -H --help" -- "$2"))
+    elif [[ $3 == -c || $3 = --certificate ]]; then
+        COMPREPLY=($(compgen -f -- "$2"))
+    else
+        COMPREPLY=($(compgen -W "line call settings mode" -- "$2"))
+    fi
+
+    return 0
+}
+
+complete -F _xmlinfo_completion xmlinfo
+
