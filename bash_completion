@@ -14,8 +14,8 @@ _cgiexecute_completion() {
         local CURWORD
         _get_comp_words_by_ref -n ":" -c CURWORD
 
-        COMPREPLY=($(compgen -W "Dial: EditDial: Play: \
-                                 Init:Services Init:Directory Init:CallHistory \
+        COMPREPLY=($(compgen -W "Dial: EditDial: SendDigits: Play: \
+                                 Init:Services Init:Directory Init:Messages Init:CallHistory \
                                  Key:Applications Key:AppMenu Key:Contacts Key:Services \
                                  Key:Directories Key:Settings Key:Messages Key:Info \
                                  Key:Feature1 Key:Feature2 Key:Feature3 Key:Feature4 Key:Feature5 Key:Feature6 \
