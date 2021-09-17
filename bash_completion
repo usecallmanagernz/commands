@@ -4,8 +4,8 @@ _cgiexecute_completion() {
     COMPREPLY=()
 
     if [[ ${2:0:1} = - ]]; then
-        COMPREPLY=($(compgen -W "-h --host -t --timeout -u --username -p --password  -c --certificate -H --help" -- "$2"))
-    elif [[ $3 == -c || $3 = --certificate ]]; then
+        COMPREPLY=($(compgen -W "--host --timeout --username --password --certificate --help" -- "$2"))
+    elif [[ $3 = --certificate ]]; then
         COMPREPLY=($(compgen -f -- "$2"))
     else
         # Because the completion word list contains ':' characters which affect how readline
@@ -43,11 +43,11 @@ complete -F _cgiexecute_completion cgiexecute
 
 _mediastream_completion() {
     if [[ ${2:0:1} = - ]]; then
-        COMPREPLY=($(compgen -W "-f --file  -t --timeout -m --multicast -p --port -v --volume -C --codec \
-                                 -u --username -p --password -c --certificate -H --help" -- "$2"))
-    elif [[ $3 == -c || $3 = --codec ]]; then
+        COMPREPLY=($(compgen -W "--file --timeout --multicast --port --volume --codec \
+                                 --username --password --certificate --help" -- "$2"))
+    elif [[ $3 = --codec ]]; then
         COMPREPLY=($(compgen -W "g711 g722" -- "$2"))
-    else
+    elif [[ $3 = --certificate ]]; then
         COMPREPLY=($(compgen -f -- "$2"))
     fi
 
@@ -58,8 +58,8 @@ complete -F _mediastream_completion mediastream
 
 _screenshot_completion() {
     if [[ ${2:0:1} = - ]]; then
-        COMPREPLY=($(compgen -W "-h --host -t --timeout -u --username -p --password -c --certificate -H --help" -- "$2"))
-    else
+        COMPREPLY=($(compgen -W "--host --timeout --username --password --certificate --help" -- "$2"))
+    elif [[ $3 = --certificate ]]; then
         COMPREPLY=($(compgen -f -- "$2"))
     fi
 
@@ -70,8 +70,8 @@ complete -F _screenshot_completion screenshot
 
 _setbackground_completion() {
     if [[ ${2:0:1} = - ]]; then
-        COMPREPLY=($(compgen -W "-h --host -t --timeout -u --username -p --password -c --certificate -H --help" -- "$2"))
-    else
+        COMPREPLY=($(compgen -W "--host --timeout --username --password --certificate --help" -- "$2"))
+    elif [[ $3 = --certificate ]]; then
         COMPREPLY=($(compgen -f -- "$2"))
     fi
 
@@ -82,8 +82,8 @@ complete -F _setringtone_completion setbackground
 
 _setringtone_completion() {
     if [[ ${2:0:1} = - ]]; then
-        COMPREPLY=($(compgen -W "-h --host -t --timeout -u --username -p --password -c --certificate -H --help" -- "$2"))
-    else
+        COMPREPLY=($(compgen -W "--host --timeout --username --password --certificate --help" -- "$2"))
+    elif [[ $3 = --certificate ]]; then
         COMPREPLY=($(compgen -f -- "$2"))
     fi
 
@@ -94,8 +94,8 @@ complete -F _setringtone_completion setringtone
 
 _xmlinfo_completion() {
     if [[ ${2:0:1} = - ]]; then
-        COMPREPLY=($(compgen -W "-h --host -t --timeout -u --username -p --password -c --certificate -H --help" -- "$2"))
-    elif [[ $3 == -c || $3 = --certificate ]]; then
+        COMPREPLY=($(compgen -W "--host --timeout --username --password --certificate --help" -- "$2"))
+    elif [[ $3 = --certificate ]]; then
         COMPREPLY=($(compgen -f -- "$2"))
     else
         COMPREPLY=($(compgen -W "line call settings mode" -- "$2"))
@@ -105,4 +105,3 @@ _xmlinfo_completion() {
 }
 
 complete -F _xmlinfo_completion xmlinfo
-
