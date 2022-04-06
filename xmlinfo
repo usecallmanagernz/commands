@@ -43,7 +43,6 @@ def get_info(hostname, port, timeout, info, username, password, certificate_file
 
         response = session.get(f'{scheme}://{hostname}:{port}/CGI/{path}',
                                timeout = timeout, auth = auth, verify = certificate_file)
-        response.raise_for_status()
 
     except requests.RequestException as error:
         raise ProgramError(error)

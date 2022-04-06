@@ -18,9 +18,16 @@ from lxml import etree
 import requests
 import requests.auth
 import requests.adapters
-import gi
-gi.require_version('Gst', '1.0')
+import gi; gi.require_version('Gst', '1.0')
 from gi.repository import GLib, Gst
+
+
+cgi_errors = {
+    '1': 'Error parsing CiscoIPPhone object',
+    '2': 'Error framing CiscoIPPhone object',
+    '3': 'Internal file error',
+    '4': 'Authentication error'
+}
 
 
 class ProgramError(Exception):
@@ -91,8 +98,16 @@ def start_media(target_hostnames, multicast_address, port, timeout, username, pa
             try:
                 document = etree.fromstring(future.result())
 
+                if document.tag == 'CiscoIPPhoneError':
+                    number = document.get('Number', '')
+
+                    raise ProgramError('Error: ' + cgi_errors.get(number, number))
+
                 if document.tag == 'errorResponse':
-                    raise ProgramError(document.findtext('type', '') + ': ' + document.findtext('data', ''))
+                    type = document.findtext('type', '')
+                    data = document.findtext('data', '')
+
+                    raise ProgramError(f'Error {type}: {data}')
 
                 if document.tag != 'mediaStream':
                     raise ProgramError(f'Unexpected XML: {document.tag}')
@@ -101,7 +116,7 @@ def start_media(target_hostnames, multicast_address, port, timeout, username, pa
                 # Remove address so we don't try and send it audio
                 target_hostnames.remove(target_hostname)
 
-                print(f'Error {target_hostname}: {error}')
+                print(f'{target_hostname} {error}')
 
 
 def stream_media(target_hostnames, multicast_address, port, codec, wav_file):
@@ -259,10 +274,12 @@ def stop_media(target_hostnames, timeout, username, password, certificate_file):
                 document = etree.fromstring(future.result())
 
                 if document.tag == 'CiscoIPPhoneError':
-                    raise ProgramError(document.get('Number', '0'))
+                    number = document.get('Number', '')
+
+                    raise ProgramError('Error: ' + cgi_errors.get(number, number))
 
             except Exception as error:
-                print(f'Error {target_hostname}: {error}')
+                print(f'{target_hostname} {error}')
 
 
 def main():

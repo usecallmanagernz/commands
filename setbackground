@@ -48,7 +48,6 @@ def set_background(hostname, port, timeout, username, password, certificate_file
 
         response = session.post(f'{scheme}://{hostname}:{port}/CGI/Execute',
                                 timeout = timeout, auth = auth, verify = certificate_file, data = {'XML': xml})
-        response.raise_for_status()
 
     except requests.RequestException as error:
         raise ProgramError(error)
