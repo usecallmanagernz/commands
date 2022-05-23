@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 #
 # Copyright (c) 2020 Gareth Palmer <gareth.palmer3@gmail.com>
 # This program is free software, distributed under the terms of
