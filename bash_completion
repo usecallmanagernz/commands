@@ -78,7 +78,7 @@ _setbackground_completion() {
     return 0
 }
 
-complete -F _setringtone_completion setbackground
+complete -F _setbackground_completion setbackground
 
 _setringtone_completion() {
     if [[ ${2:0:1} = - ]]; then
