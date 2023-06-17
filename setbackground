@@ -46,8 +46,8 @@ def set_background(hostname, port, timeout, username, password, certificate_file
         session = requests.Session()
         session.mount('https://', HTTPSAdapter())
 
-        response = session.post(f'{scheme}://{hostname}:{port}/CGI/Execute',
-                                timeout = timeout, auth = auth, verify = certificate_file, data = {'XML': xml})
+        session.post(f'{scheme}://{hostname}:{port}/CGI/Execute',
+                     timeout = timeout, auth = auth, verify = certificate_file, data = {'XML': xml})
 
     except requests.RequestException as error:
         raise ProgramError(error)
@@ -130,7 +130,7 @@ def main():
             return
 
         if len(arguments) < 1:
-            raise ProgramError(f'No image provided')
+            raise ProgramError('No image provided')
 
         image = arguments[0]
 
@@ -138,7 +138,7 @@ def main():
             raise ProgramError(f'Invalid image: {image}')
 
         if len(arguments) < 2:
-            raise ProgramError(f'No icon provided')
+            raise ProgramError('No icon provided')
 
         icon = arguments[1]
 

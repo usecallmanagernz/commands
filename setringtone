@@ -43,8 +43,8 @@ def set_ringtone(hostname, port, timeout, username, password, certificate_file, 
         session = requests.Session()
         session.mount('https://', HTTPSAdapter())
 
-        response = session.post(f'{scheme}://{hostname}:{port}/CGI/Execute',
-                                timeout = timeout, auth = auth, verify = certificate_file, data = {'XML': xml})
+        session.post(f'{scheme}://{hostname}:{port}/CGI/Execute',
+                     timeout = timeout, auth = auth, verify = certificate_file, data = {'XML': xml})
 
     except requests.RequestException as error:
         raise ProgramError(error)

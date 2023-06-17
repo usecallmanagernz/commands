@@ -131,7 +131,7 @@ def main():
             return
 
         if not len(arguments):
-            raise ProgramError(f'No mode specified')
+            raise ProgramError('No mode specified')
 
         info = arguments[0]
 
