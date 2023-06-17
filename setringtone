@@ -126,7 +126,7 @@ def main():
             return
 
         if not len(arguments):
-            raise ProgramError(f'No ring-tone provided')
+            raise ProgramError('No ring-tone provided')
 
         ringtone = arguments[0]
 
