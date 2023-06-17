@@ -17,6 +17,8 @@ on:
       - '.shellcheckrc'
       - '.github/workflows/shellcheck.yml'
 
+  workflow_dispatch:
+
 jobs:
   lint:
     name: Run shell linter
