@@ -27,7 +27,7 @@ class HTTPSAdapter(requests.adapters.HTTPAdapter):
         super().init_poolmanager(*args, **kwargs)
 
 
-cgi_errors = {
+CGI_ERRORS = {
     '1': 'Error parsing CiscoIPPhone object',
     '2': 'Error framing CiscoIPPhone object',
     '3': 'Internal file error',
@@ -72,7 +72,7 @@ def cgi_execute(hostname, port, timeout, username, password, certificate_file, u
     if document.tag == 'CiscoIPPhoneError':
         number = document.get('Number', '')
 
-        raise ProgramError('Error: ' + cgi_errors.get(number, number))
+        raise ProgramError('Error: ' + CGI_ERRORS.get(number, number))
 
     for element in document.findall('ResponseItem'):
         url = element.get('URL')

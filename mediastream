@@ -22,7 +22,7 @@ import gi; gi.require_version('Gst', '1.0')
 from gi.repository import GLib, Gst
 
 
-cgi_errors = {
+CGI_ERRORS = {
     '1': 'Error parsing CiscoIPPhone object',
     '2': 'Error framing CiscoIPPhone object',
     '3': 'Internal file error',
@@ -101,7 +101,7 @@ def start_media(target_hostnames, multicast_address, port, timeout, username, pa
                 if document.tag == 'CiscoIPPhoneError':
                     number = document.get('Number', '')
 
-                    raise ProgramError('Error: ' + cgi_errors.get(number, number))
+                    raise ProgramError('Error: ' + CGI_ERRORS.get(number, number))
 
                 if document.tag == 'errorResponse':
                     type = document.findtext('type', '')
@@ -276,7 +276,7 @@ def stop_media(target_hostnames, timeout, username, password, certificate_file):
                 if document.tag == 'CiscoIPPhoneError':
                     number = document.get('Number', '')
 
-                    raise ProgramError('Error: ' + cgi_errors.get(number, number))
+                    raise ProgramError('Error: ' + CGI_ERRORS.get(number, number))
 
             except Exception as error:
                 print(f'{target_hostname} {error}')
