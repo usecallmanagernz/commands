@@ -98,6 +98,10 @@ def main():
 
                 try:
                     timeout = int(timeout)
+
+                    if timeout < 1:
+                        raise ValueError
+
                 except ValueError:
                     raise ProgramError(f'Invalid timeout: {timeout}')
 
