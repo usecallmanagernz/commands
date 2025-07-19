@@ -27,10 +27,10 @@ class HTTPSAdapter(requests.adapters.HTTPAdapter):
 
 
 def set_ringtone(hostname, port, timeout, username, password, certificate_file, ringtone):
-    xml = '<?xml version="1.0" encoding="UTF-8"?>' \
-	'<setRingTone>' \
-          '<ringTone>' + escape(ringtone) + '</ringTone>' \
-        '</setRingTone>'
+    xml = ('<?xml version="1.0" encoding="UTF-8"?>\n'
+           '<setRingTone>\n'
+           '  <ringTone>' + escape(ringtone) + '</ringTone>\n'
+           '</setRingTone>\n')
 
     if username != '':
         auth = requests.auth.HTTPBasicAuth(username, password)

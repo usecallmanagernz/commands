@@ -27,13 +27,13 @@ class HTTPSAdapter(requests.adapters.HTTPAdapter):
 
 
 def set_background(hostname, port, timeout, username, password, certificate_file, image, icon):
-    xml = '<?xml version="1.0" encoding="UTF-8"?>' \
-	'<setBackground>' \
-          '<background>' \
-            '<image>' + escape(image) + '</image>' \
-            '<icon>' + escape(icon) + '</icon>' \
-          '</background>' \
-        '</setBackground>'
+    xml = ('<?xml version="1.0" encoding="UTF-8"?>\n'
+           '<setBackground>\n'
+           '  <background>\n'
+           '    <image>' + escape(image) + '</image>\n'
+           '    <icon>' + escape(icon) + '</icon>\n'
+           '  </background>\n'
+           '</setBackground>\n')
 
     if username != '':
         auth = requests.auth.HTTPBasicAuth(username, password)

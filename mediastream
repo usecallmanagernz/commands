@@ -74,16 +74,16 @@ def start_media(target_hostnames, multicast_address, port, timeout, username, pa
             udp_socket.connect((target_hostnames[0], 0))
             source_address = udp_socket.getsockname()[0]
 
-    xml = '<?xml version="1.0" charset="UTF-8">' \
-        '<startMedia>' \
-          '<mediaStream' + (' receiveVolume="' + str(volume) + '"' if volume != -1 else '') + '>' \
-            '<type>audio</type>' \
-            '<codec>G.' + codec[1:] + '</codec>' \
-            '<mode>receive</mode>' \
-            '<address>' + source_address + '</address>' \
-            '<port>' + str(port) + '</port>' \
-          '</mediaStream>' \
-        '</startMedia>'
+    xml = ('<?xml version="1.0" charset="UTF-8">\n'
+           '<startMedia>\n'
+           '  <mediaStream' + (' receiveVolume="' + str(volume) + '"' if volume != -1 else '') + '>\n'
+           '    <type>audio</type>\n'
+           '    <codec>G.' + codec[1:] + '</codec>\n'
+           '    <mode>receive</mode>\n'
+           '    <address>' + source_address + '</address>\n'
+           '    <port>' + str(port) + '</port>\n'
+           '  </mediaStream>\n'
+           '</startMedia>\n')
 
     with concurrent.futures.ThreadPoolExecutor(max_workers = 32) as executor:
         futures = {}
@@ -255,10 +255,10 @@ def stream_media(target_hostnames, multicast_address, port, codec, wav_file):
 
 
 def stop_media(target_hostnames, timeout, username, password, certificate_file):
-    xml = '<?xml version="1.0" charset="UTF-8">' \
-        '<stopMedia>' \
-          '<mediaStream />' \
-        '</stopMedia>'
+    xml = ('<?xml version="1.0" charset="UTF-8">\n'
+           '<stopMedia>\n'
+           '  <mediaStream />\n'
+           '</stopMedia>\n')
 
     with concurrent.futures.ThreadPoolExecutor(max_workers = 32) as executor:
         futures = {}

@@ -17,6 +17,14 @@ import requests.adapters
 from lxml import etree
 
 
+CGI_ERRORS = {
+    '1': 'XML parser error',
+    '2': 'Internal framing error',
+    '3': 'Internal file error',
+    '4': 'Authentication error'
+}
+
+
 class ProgramError(Exception):
     pass
 
@@ -27,22 +35,14 @@ class HTTPSAdapter(requests.adapters.HTTPAdapter):
         super().init_poolmanager(*args, **kwargs)
 
 
-CGI_ERRORS = {
-    '1': 'Error parsing CiscoIPPhone object',
-    '2': 'Error framing CiscoIPPhone object',
-    '3': 'Internal file error',
-    '4': 'Authentication error'
-}
-
-
 def cgi_execute(hostname, port, timeout, username, password, certificate_file, urls):
-    xml = '<?xml version="1.0" encoding="UTF-8"?>' \
-	'<CiscoIPPhoneExecute>'
+    xml = ('<?xml version="1.0" encoding="UTF-8"?>\n'
+	   '<CiscoIPPhoneExecute>\n')
 
     for url, priority in urls:
-        xml += '<ExecuteItem URL="' + escape(url) + '" Priority="' + str(priority) + '" />'
+        xml += '  <ExecuteItem URL="' + escape(url) + '" Priority="' + str(priority) + '" />\n'
 
-    xml += '</CiscoIPPhoneExecute>'
+    xml += '</CiscoIPPhoneExecute>\n'
 
     if username != '':
         auth = requests.auth.HTTPBasicAuth(username, password)
@@ -72,7 +72,7 @@ def cgi_execute(hostname, port, timeout, username, password, certificate_file, u
     if document.tag == 'CiscoIPPhoneError':
         number = document.get('Number', '')
 
-        raise ProgramError('Error: ' + CGI_ERRORS.get(number, number))
+        raise ProgramError(CGI_ERRORS.get(number, f'Error: number'))
 
     for element in document.findall('ResponseItem'):
         url = element.get('URL')
@@ -191,6 +191,9 @@ def main():
 
             if len(urls) == 3:
                 raise ProgramError('A maximum of 3 URLs can be specified')
+
+            if len(url) > 496:
+                raise ProgramError(f'URL too long: {url}')
 
             urls.append((url, priority))
 
