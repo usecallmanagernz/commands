@@ -72,7 +72,7 @@ def cgi_execute(hostname, port, timeout, username, password, certificate_file, u
     if document.tag == 'CiscoIPPhoneError':
         number = document.get('Number', '')
 
-        raise ProgramError(CGI_ERRORS.get(number, f'Error: number'))
+        raise ProgramError(CGI_ERRORS.get(number, f'Error: {number}'))
 
     for element in document.findall('ResponseItem'):
         url = element.get('URL')
@@ -192,7 +192,7 @@ def main():
             if len(urls) == 3:
                 raise ProgramError('A maximum of 3 URLs can be specified')
 
-            if len(url) > 496:
+            if len(url) > 256:
                 raise ProgramError(f'URL too long: {url}')
 
             urls.append((url, priority))
