@@ -10,7 +10,8 @@ can be used to query or remotely control a Cisco IP Phone.
 * `screenshot` - Download a screenshot of the phones screen.
 * `setbackground` - Set the background image on the phone.
 * `setringtone` - Set the ring-tone on the phone.
-* `xmlinfo` - Get call, line or settings information from phone as XML.
+* `xmlinfo` - Get call, line, settings, mode, device, network, ethernet,
+  port, log and streaming information from the phone as XML.
 
 ## Requirements
 

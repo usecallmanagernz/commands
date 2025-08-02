@@ -32,10 +32,13 @@ def set_ringtone(hostname, port, timeout, username, password, certificate_file, 
            '  <ringTone>' + escape(ringtone) + '</ringTone>\n'
            '</setRingTone>\n')
 
+    if len(xml) > 512:
+        raise ProgramError(f'XML is longer than 512 characters: {xml}')
+
     if username != '':
-        auth = requests.auth.HTTPBasicAuth(username, password)
+        authentication = requests.auth.HTTPBasicAuth(username, password)
     else:
-        auth = None
+        authentication = None
 
     scheme = 'https' if certificate_file else 'http'
 
@@ -44,7 +47,7 @@ def set_ringtone(hostname, port, timeout, username, password, certificate_file, 
         session.mount('https://', HTTPSAdapter())
 
         session.post(f'{scheme}://{hostname}:{port}/CGI/Execute',
-                     timeout = timeout, auth = auth, verify = certificate_file, data = {'XML': xml})
+                     timeout = timeout, auth = authentication, verify = certificate_file, data = {'XML': xml})
 
     except requests.RequestException as error:
         raise ProgramError(error)

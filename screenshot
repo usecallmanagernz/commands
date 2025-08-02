@@ -27,9 +27,9 @@ class HTTPSAdapter(requests.adapters.HTTPAdapter):
 
 def get_screenshot(hostname, port, timeout, username, password, certificate_file, screenshot_file):
     if username != '':
-        auth = requests.auth.HTTPBasicAuth(username, password)
+        authentication = requests.auth.HTTPBasicAuth(username, password)
     else:
-        auth = None
+        authentication = None
 
     scheme = 'https' if certificate_file else 'http'
 
@@ -38,7 +38,7 @@ def get_screenshot(hostname, port, timeout, username, password, certificate_file
         session.mount('https://', HTTPSAdapter())
 
         response = session.get(f'{scheme}://{hostname}:{port}/CGI/Screenshot',
-                               timeout = timeout, auth = auth, verify = certificate_file)
+                               timeout = timeout, auth = authentication, verify = certificate_file)
 
     except requests.RequestException as error:
         raise ProgramError(error)

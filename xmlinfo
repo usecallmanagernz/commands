@@ -27,13 +27,29 @@ class HTTPSAdapter(requests.adapters.HTTPAdapter):
 
 
 def get_info(hostname, port, timeout, info, username, password, certificate_file):
-    # Transform: call -> CallInfo, line -> LineInfo, settings -> SettingsInfo, mode -> ModeInfo
-    path = info[0].upper() + info[1:] + 'Info'
+    if info in ('call', 'line', 'settings', 'mode'):
+        # call -> CallInfo, line -> LineInfo, settings -> SettingsInfo, mode -> ModeInfo
+        path = 'CGI/' + info[0].upper() + info[1:] + 'Info'
+    elif info in ('device', 'ethernet'):
+        # device -> DeviceInformationX, ethernet -> EthernetInformationX
+        path = info[0].upper() + info[1:] + 'InformationX'
+    elif info == 'network':
+        # network -> NetworkConfigurationX
+        path = 'NetworkConfigurationX'
+    elif info in ('port1', 'port2'):
+        # portN -> PortInformationX?N
+        path = 'PortInformationX?' + info[-1]
+    elif info == 'log':
+        # log -> DeviceLogX?0
+        path = 'DeviceLogX?0'
+    elif info in ('streaming1', 'streaming2', 'streaming3'):
+        # streamingN -> StreamingStatisticsX?N
+        path = 'StreamingStatisticsX?' + info[-1]
 
     if username != '':
-        auth = requests.auth.HTTPBasicAuth(username, password)
+        authentication = requests.auth.HTTPBasicAuth(username, password)
     else:
-        auth = None
+        authentication = None
 
     scheme = 'https' if certificate_file else 'http'
 
@@ -41,21 +57,37 @@ def get_info(hostname, port, timeout, info, username, password, certificate_file
         session = requests.Session()
         session.mount('https://', HTTPSAdapter())
 
-        response = session.get(f'{scheme}://{hostname}:{port}/CGI/{path}',
-                               timeout = timeout, auth = auth, verify = certificate_file)
+        response = session.get(f'{scheme}://{hostname}:{port}/{path}',
+                               timeout = timeout, auth = authentication, verify = certificate_file)
 
     except requests.RequestException as error:
         raise ProgramError(error)
 
-    if response.headers['Content-Type'][0:8] != 'text/xml':
+    # 79xx sends text/html for ModeInfo
+    if response.headers['Content-Type'][0:8] != 'text/xml' and response.headers['Content-Type'][0:9] != "text/html":
         raise ProgramError('Unexpected Content-Type ' + response.headers['Content-Type'])
 
     try:
-        document = etree.fromstring(response.content, etree.XMLParser(remove_blank_text = True))
+        # 79xx sends multiple inline <?xml encoding="xxx"?> elements for DeviceLogX
+        if info == 'log':
+            document = etree.fromstring(re.sub(r'(?x) <\? xml .*? \?>', '', response.content.decode('utf-8')),
+                                        etree.XMLParser(remove_blank_text = True))
+
+            for element in document.findall('status'):
+                # Move the timestamp text to an attribute so the output will format correctly
+                element.set('timestamp', element.text.strip())
+
+                element.text = None
+                element.find('./').tail = None
+
+        else:
+            document = etree.fromstring(response.content, etree.XMLParser(remove_blank_text = True))
+
     except etree.XMLSyntaxError as error:
         raise ProgramError(error)
 
     print(etree.tostring(document, pretty_print = True).decode('utf-8'), end = '')
+
 
 def main():
     try:
@@ -130,7 +162,8 @@ def main():
                   '  -c, --certificate CERT-FILE    connect using SSL and verify using certificate\n'
                   '  -H, --help                     print this help and exit\n'
                   '\n'
-                  'INFO is one of either line, call, settings or mode.\n')
+                  'INFO is one of either line, call, settings, mode, device, ethernet, network,\n'
+                  'port1, port2, log, streaming1, streaming2 and streaming3.\n')
 
             return
 
@@ -139,7 +172,8 @@ def main():
 
         info = arguments[0]
 
-        if info not in ('line', 'call', 'settings', 'mode'):
+        if info not in ('line', 'call', 'settings', 'mode', 'device', 'ethernet', 'network',
+                        'port1', 'port2', 'log', 'streaming1', 'streaming2', 'streaming3'):
             raise ProgramError(f'Invalid info: {info}')
 
         if hostname is None:

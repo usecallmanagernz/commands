@@ -98,7 +98,8 @@ _xmlinfo_completion() {
     elif [[ $3 = --certificate ]]; then
         COMPREPLY=($(compgen -f -- "$2"))
     else
-        COMPREPLY=($(compgen -W "line call settings mode" -- "$2"))
+        COMPREPLY=($(compgen -W "line call settings mode device ethernet network port1 port2 \
+                                 log streaming1 streaming2 streaming3" -- "$2"))
     fi
 
     return 0
