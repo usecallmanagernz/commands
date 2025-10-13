@@ -12,6 +12,7 @@ import getopt
 import traceback
 import socket
 import ipaddress
+from html import escape
 import concurrent.futures
 
 from lxml import etree
@@ -40,7 +41,7 @@ class HTTPSAdapter(requests.adapters.HTTPAdapter):
         super().init_poolmanager(*args, **kwargs)
 
 
-def cgi_execute(target_hostname, timeout, username, password, certificate_file, xml):
+def cgi_execute(hostname, timeout, username, password, certificate_file, xml):
     if username != '':
         authentication = requests.auth.HTTPBasicAuth(username, password)
     else:
@@ -52,7 +53,7 @@ def cgi_execute(target_hostname, timeout, username, password, certificate_file, 
         session = requests.Session()
         session.mount('https://', HTTPSAdapter())
 
-        response = session.post(f'{scheme}://{target_hostname}/CGI/Execute',
+        response = session.post(f'{scheme}://{hostname}/CGI/Execute',
                                 timeout = timeout, auth = authentication, verify = certificate_file, data = {'XML': xml})
         response.raise_for_status()
 
@@ -65,13 +66,13 @@ def cgi_execute(target_hostname, timeout, username, password, certificate_file, 
     return response.content
 
 
-def start_media(target_hostnames, multicast_address, port, timeout, username, password, certificate_file, volume, codec):
+def start_media(targets, multicast_address, port, timeout, username, password, certificate_file, volume, codec):
     if multicast_address is not None:
         source_address = multicast_address
     else:
-        # Find our source address using the first target host
+        # Find our source address using the first target hostname
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_socket:
-            udp_socket.connect((target_hostnames[0], 0))
+            udp_socket.connect((next(iter(targets)), 0))
             source_address = udp_socket.getsockname()[0]
 
     xml = ('<?xml version="1.0" charset="UTF-8">\n'
@@ -88,12 +89,12 @@ def start_media(target_hostnames, multicast_address, port, timeout, username, pa
     with concurrent.futures.ThreadPoolExecutor(max_workers = 32) as executor:
         futures = {}
 
-        for target_hostname in target_hostnames:
-            future = executor.submit(cgi_execute, target_hostname, timeout, username, password, certificate_file, xml)
-            futures[future] = target_hostname
+        for hostname in targets.keys():
+            future = executor.submit(cgi_execute, hostname, timeout, username, password, certificate_file, xml)
+            futures[future] = hostname
 
         for future in concurrent.futures.as_completed(futures):
-            target_hostname = futures[future]
+            hostname = futures[future]
 
             try:
                 document = etree.fromstring(future.result())
@@ -101,48 +102,51 @@ def start_media(target_hostnames, multicast_address, port, timeout, username, pa
                 if document.tag == 'CiscoIPPhoneError':
                     number = document.get('Number', '')
 
-                    raise ProgramError('Error: ' + CGI_ERRORS.get(number, number))
+                    raise ProgramError(f'CGI execute {hostname}: ' + CGI_ERRORS.get(number, f'Code {number}'))
 
                 if document.tag == 'errorResponse':
                     type = document.findtext('type', '')
                     data = document.findtext('data', '')
 
-                    raise ProgramError(f'Error {type}: {data}')
+                    raise ProgramError(f'Start media: {hostname}: {type} {data}')
 
                 if document.tag != 'mediaStream':
                     raise ProgramError(f'Unexpected XML: {document.tag}')
 
+                # Save stream 'id' so that we can use it when stopping media
+                targets[hostname] = document.get('id')
+
             except Exception as error:
                 # Remove address so we don't try and send it audio
-                target_hostnames.remove(target_hostname)
+                del targets[hostname]
 
-                print(f'{target_hostname} {error}')
+                print(f'Error: {error}')
 
 
-def stream_media(target_hostnames, multicast_address, port, codec, wav_file):
+def stream_media(targets, multicast_address, port, codec, wav_file):
     Gst.init(None)
 
     file_src = Gst.ElementFactory.make('filesrc', None)
 
     if file_src is None:
-        raise ProgramError('No \'filesrc\' plugin')
+        raise ProgramError('Missing filesrc plugin')
 
     file_src.set_property('location', wav_file)
 
     wav_parse = Gst.ElementFactory.make('wavparse', None)
 
     if wav_parse is None:
-        raise ProgramError('No \'wavparse\' plugin')
+        raise ProgramError('Missing wavparse plugin')
 
     audio_convert = Gst.ElementFactory.make('audioconvert', None)
 
     if audio_convert is None:
-        raise ProgramError('No \'audioconvert\' plugin')
+        raise ProgramError('Missing audioconvert plugin')
 
     audio_resample = Gst.ElementFactory.make('audioresample', None)
 
     if audio_resample is None:
-        raise ProgramError('No \'audioresample\' plugin')
+        raise ProgramError('Missing audioresample plugin')
 
     if codec == 'g711':
         caps_filter = Gst.Caps.from_string('audio/x-raw,channels=1,rate=8000')
@@ -153,7 +157,7 @@ def stream_media(target_hostnames, multicast_address, port, codec, wav_file):
         mulaw_enc = Gst.ElementFactory.make('mulawenc', None)
 
         if mulaw_enc is None:
-            raise ProgramError('No \'mulawenc\' plugin')
+            raise ProgramError('Missing mulawenc plugin')
 
         rtp_pcmu_pay = Gst.ElementFactory.make('rtppcmupay', None)
 
@@ -173,12 +177,12 @@ def stream_media(target_hostnames, multicast_address, port, codec, wav_file):
         avenc_g722 = Gst.ElementFactory.make('avenc_g722', None)
 
         if avenc_g722 is None:
-            raise ProgramError('No \'avenc_g722\' plugin')
+            raise ProgramError('Missing avenc_g722 plugin')
 
         rtp_g722_pay = Gst.ElementFactory.make('rtpg722pay', None)
 
         if rtp_g722_pay is None:
-            raise ProgramError('No \'rtpg722pay\' plugin')
+            raise ProgramError('Missing rtpg722pay plugin')
 
         rtp_g722_pay.set_property('pt', 0)
         rtp_g722_pay.set_property('min-ptime', 20000000)
@@ -187,12 +191,12 @@ def stream_media(target_hostnames, multicast_address, port, codec, wav_file):
     udp_sink = Gst.ElementFactory.make('udpsink', None)
 
     if udp_sink is None:
-        raise ProgramError('No \'udpsink\' plugin')
+        raise ProgramError('Missing udpsink plugin')
 
     if multicast_address is not None:
         udp_sink.set_property('clients', f'{multicast_address}:{port}')
     else:
-        udp_sink.set_property('clients', ','.join([f'{target_hostname}:{port}' for target_hostname in target_hostnames]))
+        udp_sink.set_property('clients', ','.join([f'{hostname}:{port}' for hostname in targets]))
 
     udp_sink.set_property('sync', True)
 
@@ -204,7 +208,7 @@ def stream_media(target_hostnames, multicast_address, port, codec, wav_file):
             error, reason = message.parse_error()
             main_loop.quit()
 
-            print(f'Error {error}: {reason}', file = sys.stderr)
+            print(f'Error streaming {error}: {reason}', file = sys.stderr)
 
     main_loop = GLib.MainLoop()
 
@@ -247,28 +251,28 @@ def stream_media(target_hostnames, multicast_address, port, codec, wav_file):
     if multicast_address is not None:
         print(f'Streaming {wav_file}: {multicast_address}')
     else:
-        print(f'Streaming {wav_file}: ' + ', '.join(target_hostnames))
+        print(f'Streaming {wav_file}: ' + ', '.join(targets))
 
     pipeline.set_state(Gst.State.PLAYING)
     main_loop.run()
     pipeline.set_state(Gst.State.NULL)
 
 
-def stop_media(target_hostnames, timeout, username, password, certificate_file):
-    xml = ('<?xml version="1.0" charset="UTF-8">\n'
-           '<stopMedia>\n'
-           '  <mediaStream />\n'
-           '</stopMedia>\n')
-
+def stop_media(targets, timeout, username, password, certificate_file):
     with concurrent.futures.ThreadPoolExecutor(max_workers = 32) as executor:
         futures = {}
 
-        for target_hostname in target_hostnames:
-            future = executor.submit(cgi_execute, target_hostname, timeout, username, password, certificate_file, xml)
-            futures[future] = target_hostname
+        for hostname, id in targets.items():
+            xml = ('<?xml version="1.0" charset="UTF-8">\n'
+                   '<stopMedia>\n'
+                   '  <mediaStream id="' + escape(id) + '" />\n'
+                   '</stopMedia>\n')
+
+            future = executor.submit(cgi_execute, hostname, timeout, username, password, certificate_file, xml)
+            futures[future] = hostname
 
         for future in concurrent.futures.as_completed(futures):
-            target_hostname = futures[future]
+            hostname = futures[future]
 
             try:
                 document = etree.fromstring(future.result())
@@ -276,10 +280,16 @@ def stop_media(target_hostnames, timeout, username, password, certificate_file):
                 if document.tag == 'CiscoIPPhoneError':
                     number = document.get('Number', '')
 
-                    raise ProgramError('Error: ' + CGI_ERRORS.get(number, number))
+                    raise ProgramError(f'Stop media {hostname}: ' + CGI_ERRORS.get(number, f'Code {number}'))
+
+                if document.tag == 'errorResponse':
+                    type = document.findtext('type', '')
+                    data = document.findtext('data', '')
+
+                    raise ProgramError(f'Stop media: {hostname}: {type} {data}')
 
             except Exception as error:
-                print(f'{target_hostname} {error}')
+                print(f'Error: {error}')
 
 
 def main():
@@ -396,27 +406,28 @@ def main():
         if not len(arguments):
             raise ProgramError('No target hosts specified')
 
-        target_hostnames = []
+        targets = {}
 
-        for target_hostname in arguments:
-            if not re.search(r'(?xi) ^ (?: [a-z0-9\-]+ \.)* [a-z0-9\-]+ $', target_hostname):
-                raise ProgramError(f'Invalid target host: {target_hostname}')
+        for hostname in arguments:
+            if not re.search(r'(?xi) ^ (?: [a-z0-9\-]+ \.)* [a-z0-9\-]+ $', hostname):
+                raise ProgramError(f'Invalid target host: {hostname}')
 
-            target_hostnames.append(target_hostname)
+            # Will be set to the media stream id
+            targets[hostname] = ''
 
         if wav_file is None:
             raise ProgramError('No .wav file specified')
 
-        # Invalid hostnames will be removed from the list
-        start_media(target_hostnames, multicast_address, port, timeout, username, password, certificate_file, volume, codec)
+        # Hosts that retured an error will be removed from the list
+        start_media(targets, multicast_address, port, timeout, username, password, certificate_file, volume, codec)
 
-        if len(target_hostnames):
+        if len(targets):
             try:
-                stream_media(target_hostnames, multicast_address, port, codec, wav_file)
+                stream_media(targets, multicast_address, port, codec, wav_file)
             except Exception as error:
                 print(f'{error}', file = sys.stderr)
 
-            stop_media(target_hostnames, timeout, username, password, certificate_file)
+            stop_media(targets, timeout, username, password, certificate_file)
 
     except ProgramError as error:
         print(str(error), file = sys.stderr)

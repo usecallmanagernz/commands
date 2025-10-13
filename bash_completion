@@ -25,11 +25,12 @@ _cgiexecute_completion() {
                                  Key:Line1 Key:Line2 Key:Line3 Key:Line4 Key:Line5 Key:Line6 \
                                  Key:Session1 Key:Session2 Key:Session3 Key:Session4 Key:Session5 Key:Session6 \
                                  Key:NavBack Key:NavDown Key:NavUp Key:NavLeft Key:NavRight Key:NavSelect \
-                                 Key:OffHook Key:OnHook \
+                                 Key:OffHook Key:OnHook Key:Transfer Key:Conference Key:Release \
                                  Key:KeyPad0 Key:KeyPad1 Key:KeyPad2 Key:KeyPad3 Key:KeyPad4 Key:KeyPad5 Key:Keypad6 \
                                  Key:KeyPad7 Key:KeyPad8 Key:KeyPad9 Key:KeyPadStar Key:KeyPadPound \
                                  SoftKey:Back SoftKey:Cancel SoftKey:Exit SoftKey:Next SoftKey:Search \
-                                 SoftKey:Select SoftKey:Submit SoftKey:Update SoftKey:Dial SoftKey:EditDial SoftKey:\<\< \
+                                 SoftKey:Select SoftKey:Submit SoftKey:Update SoftKey:Dial SoftKey:EditDial \
+                                 SoftKey:\<\< SoftKey:Cancel SoftKey:Back \
                                  Display:On Display:Off Display:Default \
                                  http:// https://" -- "$CURWORD"))
 
