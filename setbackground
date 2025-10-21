@@ -128,7 +128,7 @@ def main():
                   '  -t, --timeout TIMEOUT          connection timeout in seconds (default 10)\n'
                   '  -u, --username USERNAME        authentication username\n'
                   '  -p, --password PASSWORD        authentication password\n'
-                  '  -c, --certificate CERT-FILE    connect using SSL and verify using certificate\n'
+                  '  -c, --certificate CERT-FILE    connect using HTTPS and verify using certificate\n'
                   '  -H, --help                     print this help and exit\n'
                   '\n'
                   'IMAGE and ICON are either an http: or https: URL.\n'

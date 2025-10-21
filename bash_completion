@@ -57,6 +57,19 @@ _mediastream_completion() {
 
 complete -F _mediastream_completion mediastream
 
+_rtptransmit_completion() {
+    if [[ ${2:0:1} = - ]]; then
+        COMPREPLY=($(compgen -W "--file --timeout --multicast --port --volume --priority \
+                                 --username --password --certificate --help" -- "$2"))
+    elif [[ $3 = --certificate ]]; then
+        COMPREPLY=($(compgen -f -- "$2"))
+    fi
+
+    return 0
+}
+
+complete -F _rtptransmit_completion rtptransmit
+
 _screenshot_completion() {
     if [[ ${2:0:1} = - ]]; then
         COMPREPLY=($(compgen -W "--host --timeout --username --password --certificate --help" -- "$2"))

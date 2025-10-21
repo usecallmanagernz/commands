@@ -6,7 +6,10 @@ This respository contains a set of command line utilities that
 can be used to query or remotely control a Cisco IP Phone.
 
 * `cgiexecute` - Execute a URI on the phone (eg: Dial:).
-* `mediastream` - Play a .wav file on one or more phones at the same time.
+* `mediastream` - Play a .wav file on one or more phones at the same time using
+  the new RTP streaming API.
+* `rtptransmit` - Play a .wav file on one more phones at the same time using the
+  legacy RTP streaming API.
 * `screenshot` - Download a screenshot of the phones screen.
 * `setbackground` - Set the background image on the phone.
 * `setringtone` - Set the ring-tone on the phone.
@@ -20,9 +23,9 @@ The following non-standard Python modules are required: `requests` and `lxml`.
 You can use the packages provided by your OS distribution or run
 `sudo pip3 install -r requirements.txt` to satisfy those dependancies.
 
-To use `mediastream` you will need to also install GStreamer and the Glib
-object bindings. Installation is OS dependant, the following example shows how
-to install those packages on Debian/Ubuntu:
+To use `mediastream` or `rtptransmit` you will need to also install GStreamer
+and the Glib object bindings. Installation is OS dependant, the following
+example shows how to install those packages on Debian/Ubuntu:
 
 ```sh
 sudo apt install python3-gi python3-gst-1.0 \
@@ -32,7 +35,7 @@ sudo apt install python3-gi python3-gst-1.0 \
 ## Installation
 
 ```
-sudo cp cgiexecute mediastream setbackground setringtone \
+sudo cp cgiexecute mediastream rtptransmit setbackground setringtone \
   screenshot xmlinfo /usr/local/bin
 ```
 
