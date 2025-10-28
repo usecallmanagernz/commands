@@ -55,13 +55,15 @@ def cgi_execute(hostname, timeout, username, password, certificate_file, xml):
 
         response = session.post(f'{scheme}://{hostname}/CGI/Execute',
                                 timeout = timeout, auth = authentication, verify = certificate_file, data = {'XML': xml})
-        response.raise_for_status()
 
     except requests.RequestException as error:
         raise ProgramError(error)
 
+    if response.status_code != 200:
+        raise ProgramError(f'{response.status_code} {response.reason}')
+
     if response.headers['Content-Type'][0:8] != 'text/xml':
-        raise ProgramError('Unexpected Content-Type: ' + response.headers['Content-Type'])
+        raise ProgramError('Invalid content type: ' + response.headers['Content-Type'])
 
     return response.content
 

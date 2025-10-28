@@ -64,8 +64,11 @@ def cgi_execute(hostname, port, timeout, username, password, certificate_file, u
     except requests.RequestException as error:
         raise ProgramError(error)
 
+    if response.status_code != 200:
+        raise ProgramError(f'{response.status_code} {response.reason}')
+
     if response.headers['Content-Type'][0:8] != 'text/xml':
-        raise ProgramError('Unexpected Content-Type: ' + response.headers['Content-Type'])
+        raise ProgramError('Invalid content type: ' + response.headers['Content-Type'])
 
     try:
         document = etree.fromstring(response.content)

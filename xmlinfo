@@ -63,9 +63,12 @@ def get_info(hostname, port, timeout, info, username, password, certificate_file
     except requests.RequestException as error:
         raise ProgramError(error)
 
+    if response.status_code != 200:
+        raise ProgramError(f'{response.status_code} {response.reason}')
+
     # 79xx sends text/html for ModeInfo
     if response.headers['Content-Type'][0:8] != 'text/xml' and response.headers['Content-Type'][0:9] != "text/html":
-        raise ProgramError('Unexpected Content-Type ' + response.headers['Content-Type'])
+        raise ProgramError('Invalid content-type: ' + response.headers['Content-Type'])
 
     try:
         # 79xx sends multiple inline <?xml encoding="xxx"?> elements for DeviceLogX
@@ -75,7 +78,7 @@ def get_info(hostname, port, timeout, info, username, password, certificate_file
 
             for element in document.findall('status'):
                 # Move the timestamp text to an attribute so the output will format correctly
-                element.set('timestamp', element.text.strip())
+                element.set('time', element.text.strip())
 
                 element.text = None
                 element.find('./').tail = None

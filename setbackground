@@ -49,11 +49,14 @@ def set_background(hostname, port, timeout, username, password, certificate_file
         session = requests.Session()
         session.mount('https://', HTTPSAdapter())
 
-        session.post(f'{scheme}://{hostname}:{port}/CGI/Execute',
-                     timeout = timeout, auth = authentication, verify = certificate_file, data = {'XML': xml})
+        response = session.post(f'{scheme}://{hostname}:{port}/CGI/Execute',
+                                timeout = timeout, auth = authentication, verify = certificate_file, data = {'XML': xml})
 
     except requests.RequestException as error:
         raise ProgramError(error)
+
+    if response.status_code != 200:
+        raise ProgramError(f'{response.status_code} {response.reason}')
 
     print(f'Set background to {image}')
 
