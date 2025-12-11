@@ -120,3 +120,15 @@ _xmlinfo_completion() {
 }
 
 complete -F _xmlinfo_completion xmlinfo
+
+_cipimage_completion() {
+    if [[ ${2:0:1} == - ]]; then
+        COMPREPLY=($(compgen -W "--data --width --height --help" -- "$2"))
+    else
+        COMPREPLY=($(compgen -f -- "$2"))
+    fi
+
+    return 0
+}
+
+complete -f _cipimage_completion cipimage

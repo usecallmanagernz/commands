@@ -375,6 +375,9 @@ def main():
         if wav_file is None:
             raise ProgramError('No .wav file specified')
 
+        if not wav_file.endswith(('.wav', '.WAV')):
+            raise ProgramError(f'File name does not end with .wav: {wav_file}')
+
         # Hosts that retured an error will be removed from the list
         start_rtp(targets, multicast_address, port, timeout, username, password, certificate_file, volume, priority)
 

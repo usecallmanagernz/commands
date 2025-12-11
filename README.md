@@ -15,10 +15,12 @@ can be used to query or remotely control a Cisco IP Phone.
 * `setringtone` - Set the ring-tone on the phone.
 * `xmlinfo` - Get call, line, settings, mode, device, network, ethernet,
   port, log and streaming information from the phone as XML.
+* `cipimage` - Convert a PNG to an grayscale 4-color CIP image.
 
 ## Requirements
 
-The following non-standard Python modules are required: `requests` and `lxml`.
+The following non-standard Python modules are required: `requests`, `lxml`
+and `PIL`.
 
 You can use the packages provided by your OS distribution or run
 `sudo pip3 install -r requirements.txt` to satisfy those dependancies.
