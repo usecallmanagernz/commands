@@ -38,7 +38,7 @@ sudo apt install python3-gi python3-gst-1.0 \
 
 ```
 sudo cp cgiexecute mediastream rtptransmit setbackground setringtone \
-  screenshot xmlinfo /usr/local/bin
+  screenshot xmlinfo cipimage /usr/local/bin
 ```
 
 Optionally, install the bash tab-completion helpers.

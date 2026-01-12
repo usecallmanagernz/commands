@@ -1,4 +1,4 @@
-name: shell lint
+name: shell-lint
 
 on:
   push:
