@@ -5,17 +5,20 @@ on:
     branches:
       - master
     paths:
-      - 'bash_completion'
-      - '.shellcheckrc'
-      - '.github/workflows/shellcheck.yml'
+      - "bash_completion"
+      - ".shellcheckrc"
+      - ".github/workflows/shellcheck.yml"
 
   pull_request:
     branches:
       - master
     paths:
-      - 'bash_completion'
-      - '.shellcheckrc'
-      - '.github/workflows/shellcheck.yml'
+      - "bash_completion"
+      - ".shellcheckrc"
+      - ".github/workflows/shellcheck.yml"
+
+  schedule:
+    - cron: "0 8 1 * *"
 
   workflow_dispatch:
 

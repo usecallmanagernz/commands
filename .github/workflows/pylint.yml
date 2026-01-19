@@ -5,27 +5,30 @@ on:
     branches:
       - master
     paths:
-      - 'cgiexecute'
-      - 'mediastream'
-      - 'screenshot'
-      - 'setbackground'
-      - 'setringtone'
-      - 'xmlinfo'
-      - '.pylintrc'
-      - '.github/workflows/pylint.yml'
+      - "cgiexecute"
+      - "mediastream"
+      - "screenshot"
+      - "setbackground"
+      - "setringtone"
+      - "xmlinfo"
+      - ".pylintrc"
+      - ".github/workflows/pylint.yml"
 
   pull_request:
     branches:
       - master
     paths:
-      - 'cgiexecute'
-      - 'mediastream'
-      - 'screenshot'
-      - 'setbackground'
-      - 'setringtone'
-      - 'xmlinfo'
-      - '.pylintrc'
-      - '.github/workflows/pylint.yml'
+      - "cgiexecute"
+      - "mediastream"
+      - "screenshot"
+      - "setbackground"
+      - "setringtone"
+      - "xmlinfo"
+      - ".pylintrc"
+      - ".github/workflows/pylint.yml"
+
+  schedule:
+    - cron: "0 8 1 * *"
 
   workflow_dispatch:
 
