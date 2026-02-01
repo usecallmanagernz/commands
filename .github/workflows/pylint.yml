@@ -43,6 +43,7 @@ jobs:
 
       - name: Install packages
         run: |
+          sudo apt update
           sudo apt install pylint python3-lxml python3-requests python3-gi python3-gst-1.0
 
       - name: Run pylint 
