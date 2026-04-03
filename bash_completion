@@ -32,6 +32,8 @@ _cgiexecute_completion() {
                                  SoftKey:Select SoftKey:Submit SoftKey:Update SoftKey:Dial SoftKey:EditDial \
                                  SoftKey:\<\< SoftKey:Cancel SoftKey:Back \
                                  Display:On Display:Off Display:Default \
+                                 App:RequestFocus: App:ReleaseFocus: App:Minimize: App:Close: \
+                                 RTPRx: RTPTx: RTPMRx: RTPMTx: \
                                  http:// https://" -- "$CURWORD"))
 
         __ltrim_colon_completions "$CURWORD"

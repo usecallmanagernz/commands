@@ -93,7 +93,7 @@ def main():
                     except ValueError:
                         raise ProgramError(f'Invalid port: {port}')
 
-                if not re.search(r'(?xi) ^ (?: [a-z0-9\-]+ \.)* [a-z0-9\-]+ $', hostname):
+                if not re.search(r'(?xi) ^ (?: [a-z0-9\-]+ \. )* [a-z0-9\-]+ $', hostname):
                     raise ProgramError(f'Invalid host: {hostname}')
 
             elif option in ('-t', '--timeout'):

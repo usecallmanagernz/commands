@@ -75,16 +75,16 @@ def start_rtp(targets, multicast_address, port, timeout, username, password, cer
         # Find our source address using the first target hostname
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_socket:
             udp_socket.connect((next(iter(targets)), 0))
-            source_address = udp_socket.getsockname()[0]
+            source_address, _ = udp_socket.getsockname()
 
             url = 'RTPRx:' + source_address
 
     url += ':' + str(port) + ':' + (str(volume) if volume != -1 else '')
 
     xml = ('<?xml version="1.0" encoding="UTF-8"?>\n'
-           '<CiscoIPPhoneExecute>'
-           '  <ExecuteItem URL="' + escape(url) + '" Priority="' + str(priority) + '" />'
-           '</CiscoIPPhoneExecute>')
+           '<CiscoIPPhoneExecute>\n'
+           '  <ExecuteItem URL="' + escape(url) + '" Priority="' + str(priority) + '" />\n'
+           '</CiscoIPPhoneExecute>\n')
 
     with concurrent.futures.ThreadPoolExecutor(max_workers = 32) as executor:
         futures = {}
@@ -367,7 +367,7 @@ def main():
         targets = set()
 
         for hostname in arguments:
-            if not re.search(r'(?xi) ^ (?: [a-z0-9\-]+ \.)* [a-z0-9\-]+ $', hostname):
+            if not re.search(r'(?xi) ^ (?: [a-z0-9\-]+ \. )* [a-z0-9\-]+ $', hostname):
                 raise ProgramError(f'Invalid target host: {hostname}')
 
             targets.add(hostname)

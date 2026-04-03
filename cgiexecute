@@ -122,7 +122,7 @@ def main():
                     except ValueError:
                         raise ProgramError(f'Invalid port: {port}')
 
-                if not re.search(r'(?xi) ^ (?: [a-z0-9\-]+ \.)* [a-z0-9\-]+ $', hostname):
+                if not re.search(r'(?xi) ^ (?: [a-z0-9\-]+ \. )* [a-z0-9\-]+ $', hostname):
                     raise ProgramError(f'Invalid host: {hostname}')
 
             elif option in ('-t', '--timeout'):
@@ -161,7 +161,8 @@ def main():
                   '  -H, --help                     print this help and exit\n'
                   '\n'
                   'Up to 3 URLs may be specified.\n'
-                  'URL is one of Dial:, EditDial:, Key:, SoftKey:, Init:, Play:, Display:, http: or https:\n'
+                  'URL is one of Dial:, SendDigits:, EditDial:, Key:, SoftKey:, Init:, Play:, Display:,\n'
+                  'App:, RTPRx:, RTPMRx:, RTPTx: RTPMTx, http: or https:\n'
                   'Optional PRIORITY is either 0 (immediately), 1 (when idle) or 2 (only if idle).\n')
 
             return
@@ -188,11 +189,15 @@ def main():
             else:
                 priority = 0
 
-            if not re.search(r'(?x) ^ (?: (?: Dial | EditDial | SendDigits) : [0-9#*]+'
-                             r' | (?: Key | SoftKey | Init) : [a-zA-Z0-9]+'
+            if not re.search(r'(?x) ^ (?: Dial : [a-zA-Z0-9#*@,.\-]+ (?: : [0-1]? (?: : [a-zA-Z0-9/]* (?: : [0-1]? )? )? )?'
+                             r' | SendDigits : [a-zA-Z0-9#*@,.\-]+ (?: : [0-1]? (?: : [a-zA-Z0-9/]* (?: : [0-1]? )? )? )?'
+                             r' | EditDial : [a-zA-Z0-9#*@,.\-]+'
+                             r' | (?: Key | SoftKey | Init ) : [a-zA-Z0-9]+'
                              r' | Play : [a-zA-Z0-9._\-]+'
-                             r' | Display : (?: Off | On | Default) (: [0-9]+)?'
-                             r' | https? :// [^ ]+) $', url):
+                             r' | Display : (?: Off | On | Default) (: [0-9]+ )?'
+                             r' | App : (?: RequestFocus | ReleaseFocus | Minimize | Close ) : [0-2]? : [0-9]* : [a-zA-Z0-9]+ / [a-zA-Z0-9]+'
+                             r' | (?: RTPRx | RTPTx | RTPMRx | RTPMTx ) : (?: Stop | [a-zA-Z0-9.\-]+ : [0-9]+ (?: : [0-9]+ )? )'
+                             r' | https? :// [^ ]+ ) $', url):
                 raise ProgramError(f'Invalid URL: {url}')
 
             if len(urls) == 3:

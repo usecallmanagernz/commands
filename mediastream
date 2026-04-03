@@ -75,7 +75,7 @@ def start_media(targets, multicast_address, port, timeout, username, password, c
         # Find our source address using the first target hostname
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_socket:
             udp_socket.connect((next(iter(targets)), 0))
-            source_address = udp_socket.getsockname()[0]
+            source_address, _ = udp_socket.getsockname()
 
     xml = ('<?xml version="1.0" encoding="UTF-8"?>\n'
            '<startMedia>\n'
@@ -411,7 +411,7 @@ def main():
         targets = {}
 
         for hostname in arguments:
-            if not re.search(r'(?xi) ^ (?: [a-z0-9\-]+ \.)* [a-z0-9\-]+ $', hostname):
+            if not re.search(r'(?xi) ^ (?: [a-z0-9\-]+ \. )* [a-z0-9\-]+ $', hostname):
                 raise ProgramError(f'Invalid target host: {hostname}')
 
             # Will be set to the media stream id
