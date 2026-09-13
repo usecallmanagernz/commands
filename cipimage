@@ -6,7 +6,6 @@
 
 import sys
 import os.path
-import re
 import getopt
 import traceback
 
@@ -20,7 +19,7 @@ class ProgramError(Exception):
 def convert_png(png_file):
     try:
         image = Image.open(png_file, formats = ['PNG'])
-    except UnidentifiedImageError as error:
+    except UnidentifiedImageError:
         raise ProgramError(f'Invalid PNG image: {png_file}')
     except (FileNotFoundError, PermissionError, IsADirectoryError) as error:
         raise ProgramError(f'{error.strerror}: {error.filename}')
