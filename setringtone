@@ -9,11 +9,12 @@ import os.path
 import re
 import getopt
 import traceback
-from html import escape
 
 import requests
 import requests.auth
 import requests.adapters
+from lxml import etree
+from lxml.builder import E as tag
 
 
 class ProgramError(Exception):
@@ -23,14 +24,13 @@ class ProgramError(Exception):
 class HTTPSAdapter(requests.adapters.HTTPAdapter):
     def init_poolmanager(self, *args, **kwargs):
         kwargs['assert_hostname'] = False
+
         super().init_poolmanager(*args, **kwargs)
 
 
 def set_ringtone(hostname, port, timeout, username, password, certificate_file, ringtone):
-    xml = ('<?xml version="1.0" encoding="UTF-8"?>\n'
-           '<setRingTone>\n'
-           '  <ringTone>' + escape(ringtone) + '</ringTone>\n'
-           '</setRingTone>\n')
+    document = tag('setRingTone', tag('ringTone', ringtone))
+    xml = etree.tostring(document, xml_declaration = True, encoding = 'UTF-8', pretty_print = True).decode()
 
     if len(xml) > 512:
         raise ProgramError(f'XML is longer than 512 characters: {xml}')

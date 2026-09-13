@@ -12,13 +12,13 @@ import getopt
 import traceback
 import socket
 import ipaddress
-from html import escape
 import concurrent.futures
 
-from lxml import etree
 import requests
 import requests.auth
 import requests.adapters
+from lxml import etree
+from lxml.builder import E as tag
 import gi; gi.require_version('Gst', '1.0')
 from gi.repository import GLib, Gst
 
@@ -38,6 +38,7 @@ class ProgramError(Exception):
 class HTTPSAdapter(requests.adapters.HTTPAdapter):
     def init_poolmanager(self, *args, **kwargs):
         kwargs['assert_hostname'] = False
+
         super().init_poolmanager(*args, **kwargs)
 
 
@@ -81,10 +82,8 @@ def start_rtp(targets, multicast_address, port, timeout, username, password, cer
 
     url += ':' + str(port) + ':' + (str(volume) if volume != -1 else '')
 
-    xml = ('<?xml version="1.0" encoding="UTF-8"?>\n'
-           '<CiscoIPPhoneExecute>\n'
-           '  <ExecuteItem URL="' + escape(url) + '" Priority="' + str(priority) + '" />\n'
-           '</CiscoIPPhoneExecute>\n')
+    document = tag('CiscoIPPhoneExecute', tag('ExecuteItem', {'URL': url, 'Priority': str(priority)}))
+    xml = etree.tostring(document, xml_declaration = True, encoding = 'UTF-8', pretty_print = True).decode()
 
     with concurrent.futures.ThreadPoolExecutor(max_workers = 32) as executor:
         futures = {}
@@ -215,10 +214,8 @@ def stream_rtp(targets, multicast_address, port, wav_file):
 
 def stop_rtp(targets, timeout, username, password, certificate_file):
     # RTPRx:Stop will stop both unicast and multicast streams
-    xml = ('<?xml version="1.0" encoding="UTF-8"?>\n'
-           '<CiscoIPPhoneExecute>\n'
-           '  <ExecuteItem URL="RTPRx:Stop" Priority="0" />\n'
-           '</CiscoIPPhoneExecute>\n')
+    document = tag('CiscoIPPhoneExecute', tag('ExecuteItem', {'URL': 'RTPRx:Stop', 'Priority': '0'}))
+    xml = etree.tostring(document, xml_declaration = True, encoding = 'UTF-8', pretty_print = True).decode()
 
     with concurrent.futures.ThreadPoolExecutor(max_workers = 32) as executor:
         futures = {}
@@ -324,7 +321,7 @@ def main():
                 try:
                     priority = int(priority)
 
-                    if priority < 0 or priority > 3:
+                    if priority < 0 or priority > 2:
                         raise ValueError
 
                 except ValueError:

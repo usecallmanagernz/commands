@@ -12,13 +12,13 @@ import getopt
 import traceback
 import socket
 import ipaddress
-from html import escape
 import concurrent.futures
 
-from lxml import etree
 import requests
 import requests.auth
 import requests.adapters
+from lxml import etree
+from lxml.builder import E as tag
 import gi; gi.require_version('Gst', '1.0')
 from gi.repository import GLib, Gst
 
@@ -38,6 +38,7 @@ class ProgramError(Exception):
 class HTTPSAdapter(requests.adapters.HTTPAdapter):
     def init_poolmanager(self, *args, **kwargs):
         kwargs['assert_hostname'] = False
+
         super().init_poolmanager(*args, **kwargs)
 
 
@@ -77,16 +78,17 @@ def start_media(targets, multicast_address, port, timeout, username, password, c
             udp_socket.connect((next(iter(targets)), 0))
             source_address, _ = udp_socket.getsockname()
 
-    xml = ('<?xml version="1.0" encoding="UTF-8"?>\n'
-           '<startMedia>\n'
-           '  <mediaStream' + (' receiveVolume="' + str(volume) + '"' if volume != -1 else '') + '>\n'
-           '    <type>audio</type>\n'
-           '    <codec>G.' + codec[1:] + '</codec>\n'
-           '    <mode>receive</mode>\n'
-           '    <address>' + source_address + '</address>\n'
-           '    <port>' + str(port) + '</port>\n'
-           '  </mediaStream>\n'
-           '</startMedia>\n')
+    document = tag('startMedia',
+        tag('mediaStream',
+            tag('type', 'audio'),
+            tag('codec', 'G.' + codec[1:]),
+            tag('mode', 'receive'),
+            tag('address', source_address),
+            tag('port', str(port)),
+            {'receiveVolume': str(volume)} if volume != -1 else {}
+        ))
+
+    xml = etree.tostring(document, xml_declaration = True, encoding = 'UTF-8', pretty_print = True).decode()
 
     with concurrent.futures.ThreadPoolExecutor(max_workers = 32) as executor:
         futures = {}
@@ -265,10 +267,8 @@ def stop_media(targets, timeout, username, password, certificate_file):
         futures = {}
 
         for hostname, id in targets.items():
-            xml = ('<?xml version="1.0" encoding="UTF-8"?>\n'
-                   '<stopMedia>\n'
-                   '  <mediaStream id="' + escape(id) + '" />\n'
-                   '</stopMedia>\n')
+            document = tag('stopMedia', tag('mediaStream', {'id': id}))
+            xml = etree.tostring(document, xml_declaration = True, encoding = 'UTF-8', pretty_print = True).decode()
 
             future = executor.submit(cgi_execute, hostname, timeout, username, password, certificate_file, xml)
             futures[future] = hostname

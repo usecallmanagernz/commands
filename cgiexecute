@@ -9,12 +9,12 @@ import os.path
 import re
 import getopt
 import traceback
-from html import escape
 
 import requests
 import requests.auth
 import requests.adapters
 from lxml import etree
+from lxml.builder import E as tag
 
 
 CGI_ERRORS = {
@@ -32,17 +32,17 @@ class ProgramError(Exception):
 class HTTPSAdapter(requests.adapters.HTTPAdapter):
     def init_poolmanager(self, *args, **kwargs):
         kwargs['assert_hostname'] = False
+
         super().init_poolmanager(*args, **kwargs)
 
 
 def cgi_execute(hostname, port, timeout, username, password, certificate_file, urls):
-    xml = ('<?xml version="1.0" encoding="UTF-8"?>\n'
-	   '<CiscoIPPhoneExecute>\n')
+    document = tag('CiscoIPPhoneExecute')
 
     for url, priority in urls:
-        xml += '  <ExecuteItem URL="' + escape(url) + '" Priority="' + str(priority) + '" />\n'
+        document.append(tag('ExecuteItem', {'URL': url, 'Priority': str(priority)}))
 
-    xml += '</CiscoIPPhoneExecute>\n'
+    xml = etree.tostring(document, xml_declaration = True, encoding = 'UTF-8', pretty_print = True).decode()
 
     if len(xml) > 512:
         raise ProgramError(f'XML is longer than 512 characters: {xml}')
